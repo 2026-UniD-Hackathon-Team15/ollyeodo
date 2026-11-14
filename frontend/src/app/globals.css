@@ -27,6 +27,13 @@
   --color-signal-red: #f04452;
   --color-signal-red-soft: #feeef0;
   --color-signal-red-ink: #d22030;
+
+  /* 노란불(비교 중) 깜빡임 */
+  --animate-signal-blink: signal-blink 1.1s ease-in-out infinite;
+  @keyframes signal-blink {
+    0%, 100% { opacity: 1; box-shadow: 0 0 10px rgb(255 179 49 / 0.9); }
+    50% { opacity: 0.45; box-shadow: 0 0 2px rgb(255 179 49 / 0.2); }
+  }
 }
 
 @theme inline {
@@ -149,8 +156,28 @@
   }
   body {
     @apply bg-background text-foreground;
+    word-break: keep-all;
   }
   html {
     @apply font-sans;
   }
+}
+/* 로고 ":" 신호 — 빨강과 민트가 번갈아 켜진다 (홈 첫 화면) */
+@media (prefers-reduced-motion: no-preference) {
+  .logo-colon-animated .logo-stop {
+    animation: logo-stop 2.2s ease-in-out infinite;
+  }
+  .logo-colon-animated .logo-go {
+    animation: logo-go 2.2s ease-in-out infinite;
+  }
+}
+@keyframes logo-stop {
+  0%, 45% { opacity: 1; }
+  55%, 95% { opacity: 0.25; }
+  100% { opacity: 1; }
+}
+@keyframes logo-go {
+  0%, 45% { opacity: 0.25; }
+  55%, 95% { opacity: 1; }
+  100% { opacity: 0.25; }
 }
