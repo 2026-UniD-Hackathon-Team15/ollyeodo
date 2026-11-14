@@ -16,9 +16,17 @@ import java.util.Objects;
 /** OpenAI Chat Completions의 JSON Schema 구조화 출력 어댑터. */
 public class OpenAiExtractionClient implements ExtractionClient {
     private final ChatClient chatClient;
+    /** 이미지 분석 추론 강도 (low|medium|high). 비어 있으면 모델 기본값 */
+    private final String imageReasoningEffort;
 
     public OpenAiExtractionClient(ChatClient chatClient) {
+        this(chatClient, null);
+    }
+
+    public OpenAiExtractionClient(ChatClient chatClient, String imageReasoningEffort) {
         this.chatClient = Objects.requireNonNull(chatClient);
+        this.imageReasoningEffort = imageReasoningEffort == null || imageReasoningEffort.isBlank()
+                ? null : imageReasoningEffort.strip();
     }
 
     @Override
@@ -31,14 +39,20 @@ public class OpenAiExtractionClient implements ExtractionClient {
         return extract(prompt, caption, null, timeout, CaptionClaims.class);
     }
 
+    @Override
+    public CaptionReview reviewCaption(String prompt, String input, Duration timeout) {
+        return extract(prompt, input, null, timeout, CaptionReview.class);
+    }
+
     private <T> T extract(String prompt, String text, ImageInput image, Duration timeout, Class<T> type) {
         var converter = new BeanOutputConverter<>(type);
         var format = ResponseFormat.builder().type(ResponseFormat.Type.JSON_SCHEMA)
                 .jsonSchema(ResponseFormat.JsonSchema.builder().name(type.getSimpleName())
                         .strict(true).schema(nullableSchema(converter.getJsonSchema())).build()).build();
         // 사용자 입력은 별도 데이터 메시지로 전달한다.
-        var response = chatClient.prompt().options(OpenAiChatOptions.builder()
-                .responseFormat(format).build()).system(prompt).user(u -> {
+        var options = OpenAiChatOptions.builder().responseFormat(format);
+        if (image != null && imageReasoningEffort != null) options.reasoningEffort(imageReasoningEffort);
+        var response = chatClient.prompt().options(options.build()).system(prompt).user(u -> {
             u.text(text);
             if (image != null) u.media(MimeTypeUtils.parseMimeType(image.mediaType()),
                     new ByteArrayResource(image.bytes()));

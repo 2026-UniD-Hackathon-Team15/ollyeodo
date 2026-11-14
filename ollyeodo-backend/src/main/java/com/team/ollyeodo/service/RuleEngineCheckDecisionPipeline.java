@@ -24,7 +24,8 @@ public class RuleEngineCheckDecisionPipeline implements CheckDecisionPipeline {
     @Override
     public Result evaluate(Input input) {
         JudgeResult judged = ruleEngine.judge(new JudgeInput(input.asOf(), input.run1(), input.run2(),
-                input.captionClaims(), input.realFirst(), input.aiFirst(), input.aiSecond()), rules.findAll());
+                input.captionClaims(), input.realFirst(), input.aiFirst(), input.aiSecond(), input.realSecond(),
+                input.caption(), input.review1(), input.review2()), rules.findAll());
         RegenOutput regen = regenPromptBuilder.build(judged, input.realFirst(), input.caption());
         var findings = judged.findings().stream()
                 .map(f -> new FindingResponse(f.ruleCode(), f.severity(), f.aiValue(), f.realValue(),

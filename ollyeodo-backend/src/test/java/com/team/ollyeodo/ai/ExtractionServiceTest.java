@@ -38,7 +38,7 @@ class ExtractionServiceTest {
                 public ExtractedAttrs extractImage(String prompt, ImageInput image, Duration timeout) {
                     if (image == REAL) {
                         order.add("real");
-                        assertEquals(PromptTemplates.IMAGE, prompt); // 실물은 목록 없이 자유 추출
+                        assertEquals(PromptTemplates.REAL_IMAGE, prompt); // 실물은 목록 없이 자유 추출
                         realStarted.countDown();
                         try {
                             if (!realStarted.await(2, TimeUnit.SECONDS)) throw new IllegalStateException("real not parallel");
@@ -59,12 +59,14 @@ class ExtractionServiceTest {
             };
             var result = new ExtractionService(client, executor, Duration.ofSeconds(3)).extractImages(IMAGE, REAL);
 
-            assertEquals(List.of("real", "real", "ai", "ai"), order); // 실물 2회가 끝난 뒤 AI 2회
+            assertEquals(List.of("real", "real", "real", "ai", "ai", "ai"), order); // 실물 3회가 끝난 뒤 AI 3회
             assertEquals(List.of("닭강정", "떡", "파"), result.ingredientNames());
-            assertEquals(2, aiPrompts.size());
+            assertEquals(ExtractionService.RUNS, aiPrompts.size());
             aiPrompts.forEach(p -> assertTrue(p.contains("[\"닭강정\",\"떡\",\"파\"]"), "AI 프롬프트에 실물 재료명 목록"));
             assertEquals(2, result.real().first().layers());
             assertEquals(1, result.ai().first().layers());
+            assertEquals(2, result.realMedian().layers());   // 3회 중앙값
+            assertEquals(1, result.aiMedian().layers());
         }
     }
 
@@ -150,5 +152,37 @@ class ExtractionServiceTest {
                 throw new UnsupportedOperationException();
             }
         };
+    }
+
+    // ---------- §6.3-9 다른 음식이면 검수 불가 ----------
+
+    private static ExtractedAttrs aiAttrs(Boolean sameFood, ExtractedAttrs.Item... items) {
+        return new ExtractedAttrs(List.of(items), null, null, null, List.of(), List.of(), List.of(),
+                "피자", null, sameFood);
+    }
+
+    @Test
+    void differentFoodWhenBothRunsSayNotSame() {
+        var pizza = aiAttrs(false, new ExtractedAttrs.Item("피자", 1, "상자"));
+        org.junit.jupiter.api.Assertions.assertTrue(
+                ExtractionService.differentFood(pizza, pizza, List.of("닭강정", "떡")));
+    }
+
+    @Test
+    void differentFoodWhenAllRealIngredientsAreZero() {
+        var zero = aiAttrs(null, new ExtractedAttrs.Item("닭강정", 0, null), new ExtractedAttrs.Item("떡", 0, null),
+                new ExtractedAttrs.Item("피자", 1, null));
+        org.junit.jupiter.api.Assertions.assertTrue(
+                ExtractionService.differentFood(zero, zero, List.of("닭강정", "떡")));
+    }
+
+    @Test
+    void sameFoodWhenOnlyOneRunDiffers() {
+        var pizza = aiAttrs(false);
+        var same = aiAttrs(true, new ExtractedAttrs.Item("닭강정", 50, null), new ExtractedAttrs.Item("떡", 0, null));
+        org.junit.jupiter.api.Assertions.assertFalse(
+                ExtractionService.differentFood(pizza, same, List.of("닭강정", "떡")));
+        org.junit.jupiter.api.Assertions.assertFalse(
+                ExtractionService.differentFood(same, same, List.of("닭강정", "떡")));
     }
 }

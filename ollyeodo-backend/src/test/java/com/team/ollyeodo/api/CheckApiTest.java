@@ -49,7 +49,7 @@ class CheckApiTest {
         when(storage.store(eq("real"), any())).thenReturn("real/photo.png");
         when(storage.store(eq("ai"), any())).thenReturn("ai/photo.png");
         when(storage.signedUrl(anyString())).thenAnswer(call -> "https://example.test/" + call.getArgument(0));
-        when(extraction.extractImages(any(), any())).thenReturn(new ExtractionService.ImagesResult(
+        when(extraction.extractImages(any(), any(), any())).thenReturn(new ExtractionService.ImagesResult(
                 ImageExtractionResult.compare(ai, ai), ImageExtractionResult.compare(real, real), List.of("딸기")));
         when(extraction.extractCaption(anyString())).thenReturn(new CaptionClaims(List.of(), null, null, List.of()));
         when(decision.evaluate(any())).thenReturn(new CheckDecisionPipeline.Result(Severity.RED, List.of(
@@ -144,8 +144,20 @@ class CheckApiTest {
     }
 
     @Test
+    void differentFoodReturns422WithMessage() throws Exception {
+        when(extraction.extractImages(any(), any(), any()))
+                .thenThrow(new com.team.ollyeodo.ai.DifferentFoodException());
+        mvc.perform(checkRequest().file(image("realImage")).file(image("aiImage"))
+                        .param("caption", "설명"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.detail").value(com.team.ollyeodo.ai.DifferentFoodException.MESSAGE));
+        assertThat(checks.count()).isZero();
+        verifyNoInteractions(decision);
+    }
+
+    @Test
     void extractionFailureReturns422WithoutSavingCheck() throws Exception {
-        when(extraction.extractImages(any(), any())).thenThrow(new ExtractionException("upstream detail", null));
+        when(extraction.extractImages(any(), any(), any())).thenThrow(new ExtractionException("upstream detail", null));
         mvc.perform(checkRequest().file(image("realImage")).file(image("aiImage"))
                         .param("caption", "설명"))
                 .andExpect(status().isUnprocessableEntity())
