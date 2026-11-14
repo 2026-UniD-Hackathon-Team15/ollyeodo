@@ -158,48 +158,23 @@ export const mockStats: CheckStats = {
   greenChecks: 7,
   redChecks: 5,
   ruleCounts: [
-    { ruleCode: "IMG_COUNT", count: 7 },
-    { ruleCode: "IMG_EXTRA_ITEM", count: 5 },
-    { ruleCode: "CAP_FACT", count: 4 },
-    { ruleCode: "CAP_MEDICINE", count: 3 },
-    { ruleCode: "CAP_SUPERLATIVE", count: 2 },
+    { ruleCode: "IMG_COUNT", title: "개수", lawRef: FOOD_FAIR_FALSE, count: 7 },
+    { ruleCode: "IMG_EXTRA_ITEM", title: "없는 재료", lawRef: FOOD_FAIR_FALSE, count: 5 },
+    { ruleCode: "CAP_FACT", title: "수치·재료 불일치 (실물 사진 추출값 기준)", lawRef: FOOD_FAIR_FALSE, count: 4 },
+    { ruleCode: "CAP_MEDICINE", title: "의약품 오인", lawRef: "식품표시광고법 제8조①2호", count: 3 },
+    { ruleCode: "CAP_SUPERLATIVE", title: "근거 없는 최상급·비교", lawRef: "식품표시광고법 제8조①7호 · 표시광고법 제3조①3호", count: 2 },
+    { ruleCode: "AI_VIRTUAL_EXPERT", title: "AI 가상 전문가 — 11/27부터 금지", lawRef: "식품표시광고법 제8조①11호", count: 1 },
   ],
   recentChecks: [
-    {
-      checkId: 14,
-      menuName: "딸기 크레이프 케이크",
-      checkedAt: "2026-11-14T21:12:00+09:00",
-      overall: "GREEN",
-      note: "다시 올려서 통과",
-      aiImageUrl: "/home/ai-menu-fixed.jpg",
-    },
-    {
-      checkId: 12,
-      menuName: "딸기 크레이프 케이크",
-      checkedAt: "2026-11-14T20:40:00+09:00",
-      overall: "RED",
-      note: "고칠 곳 4곳",
-      aiImageUrl: "/home/ai-menu.jpg",
-    },
-    {
-      checkId: 13,
-      menuName: "말차 티라미수",
-      checkedAt: "2026-11-13T12:00:00+09:00",
-      overall: "GREEN",
-      note: "고칠 곳 없음",
-    },
-    {
-      checkId: 11,
-      menuName: "바질 크림 파스타",
-      checkedAt: "2026-11-12T12:00:00+09:00",
-      overall: "RED",
-      note: "고칠 곳 2곳",
-    },
+    { checkId: 14, menuName: "딸기 크레이프 케이크", overall: "GREEN", redCount: 0, asOf: "2026-11-14", createdAt: "2026-11-14T12:12:00Z" },
+    { checkId: 12, menuName: "딸기 크레이프 케이크", overall: "RED", redCount: 4, asOf: "2026-11-14", createdAt: "2026-11-14T11:40:00Z" },
+    { checkId: 13, menuName: "말차 티라미수", overall: "GREEN", redCount: 0, asOf: "2026-11-13", createdAt: "2026-11-13T03:00:00Z" },
+    { checkId: 11, menuName: "바질 크림 파스타", overall: "RED", redCount: 2, asOf: "2026-11-12", createdAt: "2026-11-12T03:00:00Z" },
   ],
 };
 
-/** 목업 결과 찾기 — 13번은 🟢, 나머지는 🔴 */
+/** 목업 결과 찾기 — 🟢 목록(13·14)은 통과 결과, 나머지는 🔴 */
 export const mockCheckById = (id: number): CheckResult =>
-  id === mockPassedCheckResult.checkId
-    ? mockPassedCheckResult
+  id === 13 || id === 14
+    ? { ...mockPassedCheckResult, checkId: id }
     : { ...mockCheckResult, checkId: id };

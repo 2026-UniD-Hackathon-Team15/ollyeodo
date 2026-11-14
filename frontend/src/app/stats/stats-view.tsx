@@ -7,8 +7,8 @@ import { useCheckStats } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 import type { RecentCheck, RuleCode, Severity } from "@/lib/types";
 
-/** 피그마 「04 검수 기록」 항목 이름 (판정 기준표 이름과 다르게 짧게 줄인 표기) */
-const topRuleTitle: Partial<Record<RuleCode, string>> = {
+/** 화면에 짧게 보여 줄 규칙 이름. 없는 규칙은 백엔드 title을 쓴다 */
+const shortRuleTitle: Partial<Record<RuleCode, string>> = {
   IMG_COUNT: "재료 개수 차이",
   IMG_EXTRA_ITEM: "실물에 없는 재료",
   CAP_FACT: "문구 속 수치 불일치",
@@ -48,7 +48,8 @@ export function StatsView() {
     );
   }
 
-  const maxCount = Math.max(...data.ruleCounts.map((r) => r.count), 1);
+  const topRules = data.ruleCounts.slice(0, 5);
+  const maxCount = Math.max(...topRules.map((r) => r.count), 1);
   const stats = [
     { label: "전체 검수", value: data.totalChecks, dot: null },
     { label: "올려도 됨", value: data.greenChecks, dot: "bg-signal-green" },
@@ -66,7 +67,7 @@ export function StatsView() {
         </p>
       </header>
 
-      <section className="flex gap-4">
+      <section className="flex flex-col gap-3 sm:flex-row sm:gap-4">
         {stats.map((s) => (
           <div
             key={s.label}
@@ -86,7 +87,7 @@ export function StatsView() {
         ))}
       </section>
 
-      <div className="flex gap-12">
+      <div className="flex flex-col gap-10 sm:flex-row sm:gap-12">
         <section className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-2 pb-4">
             <h2 className="text-[22px] leading-[30px] font-bold tracking-[-0.66px] text-ink">
@@ -94,8 +95,8 @@ export function StatsView() {
             </h2>
             <span className="text-[14px] leading-[20px] font-medium text-faint">Top 5</span>
           </div>
-          {data.ruleCounts.length === 0 && <EmptyNote>아직 걸린 유형이 없어요.</EmptyNote>}
-          {data.ruleCounts.map((rule, i) => {
+          {topRules.length === 0 && <EmptyNote>아직 걸린 유형이 없어요.</EmptyNote>}
+          {topRules.map((rule, i) => {
             const first = i === 0;
             return (
               <div
@@ -117,7 +118,7 @@ export function StatsView() {
                       first ? "font-bold" : "font-medium",
                     )}
                   >
-                    {topRuleTitle[rule.ruleCode] ?? rule.ruleCode}
+                    {shortRuleTitle[rule.ruleCode] ?? rule.title ?? rule.ruleCode}
                   </p>
                   <span
                     className={cn(
@@ -146,10 +147,6 @@ export function StatsView() {
             <h2 className="text-[22px] leading-[30px] font-bold tracking-[-0.66px] text-ink">
               최근 검수
             </h2>
-            <span className="flex-1" />
-            <span className="text-[14px] leading-[20px] font-medium text-signal-green-ink">
-              전체 보기
-            </span>
           </div>
           {data.recentChecks.length === 0 && <EmptyNote>아직 검수한 메뉴가 없어요.</EmptyNote>}
           {data.recentChecks.map((item) => (
@@ -171,26 +168,19 @@ function RecentRow({ item }: { item: RecentCheck }) {
       href={`/checks/${item.checkId}`}
       className="flex items-center gap-3.5 border-t border-line py-3.5 pr-1 transition-colors hover:bg-surface-subtle"
     >
-      {item.aiImageUrl ? (
-        <img
-          src={item.aiImageUrl}
-          alt={item.menuName}
-          className="h-12 w-16 shrink-0 rounded-[10px] object-cover"
-        />
-      ) : (
-        <span
-          className={cn(
-            "flex h-12 w-16 shrink-0 items-center justify-center rounded-[10px]",
-            thumbTone[item.overall],
-          )}
-        >
-          <img src={bowlIcon[item.overall]} alt="" className="size-[22px]" />
-        </span>
-      )}
+      <span
+        className={cn(
+          "flex h-12 w-16 shrink-0 items-center justify-center rounded-[10px]",
+          thumbTone[item.overall],
+        )}
+      >
+        <img src={bowlIcon[item.overall]} alt="" className="size-[22px]" />
+      </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-[16px] leading-6 font-bold text-ink">{item.menuName}</span>
         <span className="text-[13px] leading-5 text-faint">
-          {dateFormat.format(new Date(item.checkedAt))} · {item.note}
+          {dateFormat.format(new Date(item.createdAt))} ·{" "}
+          {item.redCount > 0 ? `고칠 곳 ${item.redCount}곳` : "고칠 곳 없음"}
         </span>
       </span>
       <TrafficLight state={item.overall} />
