@@ -41,6 +41,14 @@ class CheckApiTest {
     private ExtractedAttrs real;
     private ExtractedAttrs ai;
 
+    /** 로그인한 사용자 토큰 (#71) */
+    static final java.util.UUID USER = java.util.UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+    static org.springframework.test.web.servlet.request.RequestPostProcessor asUser() {
+        return org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+                .jwt().jwt(j -> j.subject(USER.toString()).audience(java.util.List.of("authenticated")));
+    }
+
     @BeforeEach
     void setUp() {
         checks.deleteAll();
@@ -73,8 +81,9 @@ class CheckApiTest {
                 .andReturn().getResponse().getContentAsString();
         long id = json.readTree(body).get("checkId").asLong();
         assertThat(checks.count()).isEqualTo(1);
+        assertThat(checks.findAll().getFirst().getUserId()).isEqualTo(USER);   // 검수한 사용자 저장 (#71)
         when(storage.signedUrl("real/photo.png")).thenReturn("https://example.test/new-real-signature");
-        mvc.perform(get("/api/checks/{id}", id)).andExpect(status().isOk())
+        mvc.perform(get("/api/checks/{id}", id).with(asUser())).andExpect(status().isOk())
                 .andExpect(jsonPath("$.menuName").value("딸기 케이크"))
                 .andExpect(jsonPath("$.caption").value("딸기 케이크"))
                 .andExpect(jsonPath("$.realImageUrl").value("https://example.test/new-real-signature"))
@@ -178,13 +187,13 @@ class CheckApiTest {
 
     @Test
     void missingCheckReturns404() throws Exception {
-        mvc.perform(get("/api/checks/999999")).andExpect(status().isNotFound());
+        mvc.perform(get("/api/checks/999999").with(asUser())).andExpect(status().isNotFound());
         verifyNoInteractions(extraction, decision);
     }
 
     @Test
     void reportsAllMissingRequiredFields() throws Exception {
-        mvc.perform(multipart("/api/checks"))
+        mvc.perform(multipart("/api/checks").with(asUser()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("필수값 누락: menuName, realImage, aiImage, caption"));
         verifyNoInteractions(storage, extraction, decision);
@@ -193,7 +202,7 @@ class CheckApiTest {
     @Test
     void reportsBlankTextAndEmptyFileNames() throws Exception {
         mvc.perform(multipart("/api/checks").file(new MockMultipartFile("realImage", "empty.png", "image/png", new byte[0]))
-                        .file(image("aiImage")).param("menuName", " ").param("caption", " "))
+                        .file(image("aiImage")).param("menuName", " ").param("caption", " ").with(asUser()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("필수값 누락: menuName, realImage, caption"));
         verifyNoInteractions(storage, extraction, decision);
@@ -209,6 +218,7 @@ class CheckApiTest {
     }
     private static org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder checkRequest() {
         var request = multipart("/api/checks");
+        request.with(asUser());
         request.param("menuName", "딸기 케이크");
         return request;
     }

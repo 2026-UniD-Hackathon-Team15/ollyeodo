@@ -26,6 +26,7 @@ class CheckUnavailableTest {
     }
     private static org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder checkRequest() {
         var request = multipart("/api/checks");
+        request.with(CheckApiTest.asUser());
         request.param("menuName", "딸기 케이크");
         return request;
     }
