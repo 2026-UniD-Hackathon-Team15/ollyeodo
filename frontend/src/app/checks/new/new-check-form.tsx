@@ -96,6 +96,26 @@ export function NewCheckForm() {
     };
   }, [realPreview]);
 
+  /**
+   * 결과 화면으로 넘어가 이 화면이 가려질 때 처음 상태로 되돌린다.
+   * cacheComponents 를 켜 두면 Next.js 가 떠난 화면을 지우지 않고 상태째 숨겨 두기 때문에,
+   * 되돌리지 않으면 「다시 검수」로 돌아왔을 때 분석 중 화면이 그대로 남는다.
+   * (가려질 때 위 정리 코드가 사진 미리보기 주소도 해제하므로 사진도 함께 비운다)
+   */
+  useEffect(() => {
+    return () => {
+      setLoading(false);
+      setMenuName("");
+      setRealFile(null);
+      setRealPreview("");
+      setAiFile(null);
+      setAiPreview("");
+      setDragOver(false);
+      setCaption("");
+      dragDepth.current = 0;
+    };
+  }, []);
+
   function onRealFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file && isValidImage(file)) {
