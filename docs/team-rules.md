@@ -9,9 +9,19 @@
 
 ## 브랜치
 
-- `main`: 항상 배포 가능한 상태. 직접 push하지 않고 PR로만 머지
+```text
+feat/#8-comparison-service ─┐
+feat/#14-menu-form ─────────┼─► develop ──(통합 확인 후)──► main
+fix/#9-asof-timezone ───────┘
+```
+
+- `main`: 최종 제출·배포용. **`develop`에서 통합 확인이 끝난 것만** PR로 합친다. 직접 push 금지
+- `develop`: 통합 브랜치. 모든 작업 브랜치는 **`develop`에서 따고 `develop`으로 PR**한다. 직접 push 금지
 - 작업 브랜치: `feat/#이슈번호-설명`, `fix/#이슈번호-설명`
   - 예: `feat/#8-comparison-service`
+  - 시작: `git switch develop && git pull && git switch -c feat/#8-comparison-service`
+- `develop → main` 머지: 체크포인트(`OLLYEODO_MVP.md` §12.1)마다 PM이 올린다. 11/15 10:30 코드 프리즈 직전에 마지막으로 올린다
+- 제출용 zip은 `main`의 최종 커밋으로 만든다
 
 ## 커밋 메시지
 
@@ -24,6 +34,7 @@ test: ComparisonService 경계값 테스트 (#8)
 
 ## PR
 
+- **base 브랜치는 `develop`** (`main`으로 PR 금지. `develop → main` 통합 PR만 예외)
 - 본문에 `Closes #이슈번호`
 - ⚖️ `legal` 라벨 이슈는 **판정 기준표(OLLYEODO_MVP.md §6)와 일치하는지** 리뷰어가 확인한 뒤 머지
 - 리뷰어 1명 승인 후 머지 (Squash 금지 — 커밋 이력 유지를 위해 Merge commit 사용)
