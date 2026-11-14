@@ -6,6 +6,23 @@ spring:
     import:
       - optional:file:.env[.properties]
       - optional:file:../.env[.properties]
+  ai:
+    # 채팅(이미지·캡션 추출)만 쓴다. 나머지 OpenAI 모델은 꺼서 키 없이도 빌드·테스트가 돌게 한다.
+    model:
+      embedding: none
+      image: none
+      moderation: none
+      audio:
+        speech: none
+        transcription: none
+    openai:
+      api-key: ${AI_API_KEY:}
+      chat:
+        options:
+          model: ${AI_MODEL:gpt-5.6-luna}
+          temperature: ${AI_TEMPERATURE:}
+    retry:
+      max-attempts: 1
   datasource:
     # SUPABASE_DB_URL이 없으면 H2 메모리 DB로 뜬다 (Supabase 없이 로컬 개발용)
     url: ${SUPABASE_DB_URL:jdbc:h2:mem:ollyeodo;MODE=PostgreSQL}

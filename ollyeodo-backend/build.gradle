@@ -25,7 +25,7 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation 'org.springframework.ai:spring-ai-client-chat'
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -39,6 +39,17 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
+// 실제 API 호출은 명시적으로 실행할 때만 수행한다.
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform { excludeTags 'live' }
+}
+
+tasks.register('liveExtractionTest', Test) {
+    description = '환경변수의 키와 데모 이미지로 실제 AI 추출을 검증합니다.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'live' }
+    outputs.upToDateWhen { false }
+    testLogging.showStandardStreams = true
 }
