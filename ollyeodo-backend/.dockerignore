@@ -1,0 +1,9 @@
+build/
+.gradle/
+.idea/
+*.iml
+uploads/
+.env
+.env.*
+src/test/resources/demo/*.png
+src/test/resources/demo/*.jpg
