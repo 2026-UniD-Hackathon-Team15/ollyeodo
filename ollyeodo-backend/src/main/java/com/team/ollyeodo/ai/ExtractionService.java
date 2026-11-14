@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
@@ -28,9 +27,9 @@ public class ExtractionService {
         this.timeout = timeout;
     }
 
-    public ExtractedAttrs extractImage(ImageInput image, List<String> ingredients) {
+    public ExtractedAttrs extractImage(ImageInput image) {
         Objects.requireNonNull(image);
-        return await(image(image, PromptTemplates.image(ingredients), "image-single"));
+        return await(image(image, PromptTemplates.IMAGE, "image-single"));
     }
 
     public CaptionClaims extractCaption(String caption) {
@@ -41,18 +40,17 @@ public class ExtractionService {
     public record ImagesResult(ImageExtractionResult ai, ImageExtractionResult real) {}
 
     /** join 전에 네 작업을 모두 제출한다. 한 번이라도 실패하면 부분 결과를 반환하지 않는다. */
-    public ImagesResult extractImages(ImageInput ai, ImageInput real, List<String> ingredients) {
+    public ImagesResult extractImages(ImageInput ai, ImageInput real) {
         Objects.requireNonNull(ai);
         Objects.requireNonNull(real);
-        var names = ImageExtractionResult.ingredientNames(ingredients);
-        String prompt = PromptTemplates.image(names);
+        String prompt = PromptTemplates.IMAGE;
         var aiFirst = image(ai, prompt, "image-ai-1");
         var aiSecond = image(ai, prompt, "image-ai-2");
         var realFirst = image(real, prompt, "image-real-1");
         var realSecond = image(real, prompt, "image-real-2");
         await(CompletableFuture.allOf(aiFirst, aiSecond, realFirst, realSecond));
-        return new ImagesResult(ImageExtractionResult.compare(aiFirst.join(), aiSecond.join(), names),
-                ImageExtractionResult.compare(realFirst.join(), realSecond.join(), names));
+        return new ImagesResult(ImageExtractionResult.compare(aiFirst.join(), aiSecond.join()),
+                ImageExtractionResult.compare(realFirst.join(), realSecond.join()));
     }
 
     private CompletableFuture<ExtractedAttrs> image(ImageInput image, String prompt, String operation) {

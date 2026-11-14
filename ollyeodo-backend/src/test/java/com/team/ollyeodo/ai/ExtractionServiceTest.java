@@ -37,7 +37,7 @@ class ExtractionServiceTest {
                 }
                 return attrs(List.of(), (int) image.bytes()[0]);
             }), executor, Duration.ofSeconds(3));
-            var result = service.extractImages(IMAGE, new ImageInput(new byte[]{2}, "image/jpeg"), List.of("딸기"));
+            var result = service.extractImages(IMAGE, new ImageInput(new byte[]{2}, "image/jpeg"));
             assertEquals(4, calls.get());
             assertEquals(1, result.ai().first().layers());
             assertEquals(1, result.ai().second().layers());
@@ -51,10 +51,10 @@ class ExtractionServiceTest {
     void wrapsProviderFailureAndNullResponse() {
         var failure = new IllegalStateException("provider failed");
         var service = new ExtractionService(client(i -> { throw failure; }), Runnable::run, Duration.ofSeconds(1));
-        assertSame(failure, assertThrows(ExtractionException.class, () -> service.extractImages(IMAGE, IMAGE, List.of("딸기"))).getCause());
+        assertSame(failure, assertThrows(ExtractionException.class, () -> service.extractImages(IMAGE, IMAGE)).getCause());
         var empty = new ExtractionService(client(i -> null), Runnable::run, Duration.ofSeconds(1));
         assertInstanceOf(NullPointerException.class,
-                assertThrows(ExtractionException.class, () -> empty.extractImage(IMAGE, List.of("딸기"))).getCause());
+                assertThrows(ExtractionException.class, () -> empty.extractImage(IMAGE)).getCause());
     }
 
     @Test
@@ -69,7 +69,7 @@ class ExtractionServiceTest {
             }), executor, Duration.ofMillis(50));
             assertTimeoutPreemptively(Duration.ofSeconds(2), () ->
                     assertInstanceOf(TimeoutException.class,
-                            assertThrows(ExtractionException.class, () -> service.extractImages(IMAGE, IMAGE, List.of("딸기"))).getCause()));
+                            assertThrows(ExtractionException.class, () -> service.extractImages(IMAGE, IMAGE)).getCause()));
         } finally {
             release.countDown();
             executor.shutdownNow();
@@ -81,7 +81,7 @@ class ExtractionServiceTest {
         var expected = new CaptionClaims(List.of(), 8, null, List.of("약사 추천"));
         var client = new ExtractionClient() {
             public ExtractedAttrs extractImage(String prompt, ImageInput image, Duration timeout) {
-                assertEquals(PromptTemplates.image(List.of("딸기")), prompt);
+                assertEquals(PromptTemplates.IMAGE, prompt);
                 return ATTRS;
             }
             public CaptionClaims extractCaption(String prompt, String caption, Duration timeout) {
@@ -91,7 +91,7 @@ class ExtractionServiceTest {
             }
         };
         var service = new ExtractionService(client, Runnable::run, Duration.ofSeconds(1));
-        assertEquals(ATTRS, service.extractImage(IMAGE, List.of("딸기")));
+        assertEquals(ATTRS, service.extractImage(IMAGE));
         assertEquals(expected, service.extractCaption("8겹 약사 추천"));
     }
 
