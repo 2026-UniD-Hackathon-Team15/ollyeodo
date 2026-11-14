@@ -41,18 +41,12 @@ export interface CheckResult {
   regenPrompt: { ko: string; en: string };
 }
 
-/** 메뉴 정보 (§8 Menu.facts) */
-export interface MenuIngredient {
-  name: string;
-  count?: number;
-}
-
+/**
+ * 메뉴 정보 (§8 Menu.facts). 재료·개수·원산지는 사장님이 입력하지 않는다 —
+ * 매장에서 찍은 실제 메뉴 사진이 비교 기준이다 (피그마 「01 검수하기」).
+ */
 export interface MenuFacts {
   name: string;
-  ingredients: MenuIngredient[];
-  layers?: number;
-  origin?: string;
-  volume?: string;
 }
 
 /** POST /api/menus, GET /api/menus 응답 */
