@@ -75,7 +75,14 @@ const realApi = {
 
   listRules: () => request<Rule[]>("/api/rules"),
 
-  getStats: () => request<CheckStats>("/api/checks/stats"),
+  // 로그인 전 임시: 401이면 빈 통계(0회)를 보여 준다. 로그인 작업 때 이 fallback을 지운다.
+  getStats: () =>
+    request<CheckStats>("/api/checks/stats").catch((e: unknown) => {
+      if (e instanceof ApiError && e.status === 401) {
+        return { totalChecks: 0, redChecks: 0, greenChecks: 0, ruleCounts: [], recentChecks: [] };
+      }
+      throw e;
+    }),
 };
 
 /** NEXT_PUBLIC_USE_MOCK 으로 실제 API ↔ 목업 전환 */
