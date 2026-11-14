@@ -38,9 +38,32 @@ function koDate(iso: string) {
   return m && d ? `${m}월 ${d}일` : iso;
 }
 
-/** asOf 기준으로 아직 시행 전인 규칙인지 (§6.3 4번) */
+/** asOf 기준으로 아직 시행 전인 규칙인지 (§6.3 4번). 시행일이 없는 안내 규칙은 해당 없음 */
 function notYetEffective(rule: Rule | undefined, asOf: string) {
-  return !!rule && rule.effectiveFrom > asOf;
+  return !!rule?.effectiveFrom && rule.effectiveFrom > asOf;
+}
+
+/** asOf 기준으로 시행 중인 규칙인지 */
+function inEffect(rule: Rule, asOf: string) {
+  return !!rule.effectiveFrom && rule.effectiveFrom <= asOf && (!rule.effectiveTo || asOf <= rule.effectiveTo);
+}
+
+/** 백엔드 RuleEngine 이 붙이는 개발용 꼬리말 (두 번 추출 중 한 번만 기준을 넘음) */
+const ONE_RUN_ONLY = /\s*\(2회 추출 중 한 번만 기준을 넘어 🟢로 둠\)/;
+
+/** 백엔드 설명을 사장님이 읽을 문장으로 (판정·내용은 그대로, 개발용 표기만 바꾼다) */
+function readable(evidence?: string) {
+  return evidence
+    ?.replace(ONE_RUN_ONLY, " (두 번 비교해 한 번만 차이가 보여 통과로 뒀어요)")
+    .replace(/^실물의 1배$/, "실물과 같아요");
+}
+
+/** "접시 대비 0.8" → "80%" (백엔드 IMG_FILL 값) */
+function fillPercent(value?: string) {
+  const m = value?.match(/(\d+(?:\.\d+)?)\s*$/);
+  if (!m) return undefined;
+  const n = Number(m[1]);
+  return n <= 1 ? `${Math.round(n * 100)}%` : m[1];
 }
 
 /** 클립보드 쓰기. 권한이 막힌 브라우저(앱 안 미리보기 등)에서는 예전 방식으로 한 번 더 시도한다 */
@@ -162,8 +185,13 @@ function Verdict({ data, redCount }: { data: CheckResult; redCount: number }) {
 
 /** 카드 부제 — 이미지 규칙은 "AI 사진 딸기 9개 → 실제 3개", 문구 규칙은 메뉴 설명 “디톡스” */
 function findingSummary(f: Finding) {
+  if (f.ruleCode === "IMG_FILL") {
+    const ai = fillPercent(f.aiValue);
+    const real = fillPercent(f.realValue);
+    return ai && real ? `AI 사진 접시의 ${ai} → 실제 ${real}` : readable(f.evidence);
+  }
   if (isImageRule(f.ruleCode)) {
-    if (!f.aiValue) return f.evidence;
+    if (!f.aiValue) return readable(f.evidence);
     // 실제 값이 같은 재료 이름으로 시작하면 이름은 한 번만 쓴다 (딸기 9개 → 실제 3개)
     const [aiName] = f.aiValue.split(" ");
     const real =
@@ -172,7 +200,11 @@ function findingSummary(f: Finding) {
         : f.realValue;
     return `AI 사진 ${f.aiValue} → 실제 ${real ?? "확인 안 됨"}`;
   }
-  return f.aiValue ? `메뉴 설명 “${f.aiValue}”` : f.evidence;
+  // 사진 속 인물일 수도 있어 백엔드 값(「이미지 속 전문가로 보이는 인물」 등)을 그대로 쓴다
+  if (f.ruleCode === "AI_VIRTUAL_EXPERT") return f.aiValue ?? readable(f.evidence);
+  // 설명의 수치·재료가 실제 사진과 다를 때 (CAP_FACT: 딸기 5개 → 실제 딸기 3개)
+  if (f.aiValue && f.realValue) return `메뉴 설명 ${f.aiValue} → 실제 ${f.realValue}`;
+  return f.aiValue ? `메뉴 설명 “${f.aiValue}”` : readable(f.evidence);
 }
 
 /** 🔴 항목 한 줄 + 펼치면 사유·근거 조항·원문 링크 (피그마 13:211) */
@@ -226,7 +258,7 @@ function FindingRow({
         <div id={panelId} className="pb-3 pl-14">
           <div className="flex flex-col gap-1 rounded-[14px] bg-surface px-[18px] py-4">
             {finding.evidence && (
-              <p className="text-base leading-6 font-medium text-ink">{finding.evidence}</p>
+              <p className="text-base leading-6 font-medium text-ink">{readable(finding.evidence)}</p>
             )}
             {lawRef && (
               <p className="text-sm leading-[22px] text-sub">
@@ -278,9 +310,13 @@ function RulesTable({ rules, asOf }: { rules: Rule[]; asOf: string }) {
           {rules.map((r) => (
             <tr key={r.code} className="border-t border-line">
               <td className="px-3 py-2 text-ink">{ruleTitle[r.code]}</td>
-              <td className="px-3 py-2">{r.lawRef}</td>
+              <td className="px-3 py-2">{r.lawRef || "—"}</td>
               <td className="px-3 py-2 whitespace-nowrap">
-                {notYetEffective(r, asOf) ? `${koDate(r.effectiveFrom)}부터` : "시행 중"}
+                {!r.effectiveFrom
+                  ? "—"
+                  : notYetEffective(r, asOf)
+                    ? `${koDate(r.effectiveFrom)}부터`
+                    : "시행 중"}
               </td>
             </tr>
           ))}
@@ -294,15 +330,7 @@ function RulesTable({ rules, asOf }: { rules: Rule[]; asOf: string }) {
  * "통과지만 한 번 확인해 보세요" — 🟢 이지만 직접 한 번 봐야 할 항목 (checkOnce).
  * 피그마 RED 47:158 · GREEN 47:168. 판정은 🟢 그대로라 노란색을 쓰지 않고 회색 "!" 로 보여 준다.
  */
-function CheckOnce({
-  findings,
-  rulesByCode,
-  asOf,
-}: {
-  findings: Finding[];
-  rulesByCode: Map<RuleCode, Rule>;
-  asOf: string;
-}) {
+function CheckOnce({ findings }: { findings: Finding[] }) {
   if (findings.length === 0) return null;
   return (
     <div className="pt-6">
@@ -312,7 +340,9 @@ function CheckOnce({
       </p>
       <ul className="pt-1">
         {findings.map((f, i) => {
-          const rule = rulesByCode.get(f.ruleCode);
+          // 시행 전 규칙은 백엔드가 설명 끝에 「— ○월 ○일부터 금지」를 붙여 준다 (화면에서 다시 붙이지 않음)
+          const text = readable(f.evidence);
+          const quote = f.ruleCode === "CAP_ORIGIN" && f.aiValue ? `메뉴 설명 “${f.aiValue}” · ` : "";
           return (
             <li key={`${f.ruleCode}-${i}`} className="flex items-center gap-4 py-3.5">
               <span
@@ -325,12 +355,10 @@ function CheckOnce({
                 <span className="text-[17px] leading-[25px] font-bold text-ink">
                   {ruleTitle[f.ruleCode]}
                 </span>
-                {f.evidence && (
-                  <span className="text-[15px] leading-[22px] text-sub">{f.evidence}</span>
-                )}
-                {notYetEffective(rule, asOf) && (
-                  <span className="mt-1 w-fit rounded-full bg-surface px-2.5 py-1 text-xs font-bold text-sub">
-                    {koDate(rule!.effectiveFrom)}부터 금지
+                {text && (
+                  <span className="text-[15px] leading-[22px] text-sub">
+                    {quote}
+                    {text}
                   </span>
                 )}
               </span>
@@ -356,10 +384,16 @@ function Findings({
   const [showRules, setShowRules] = useState(false);
   const rules = [...rulesByCode.values()];
 
-  // 🟢 중 직접 한 번 봐야 할 항목은 따로, 나머지는 판정에 영향 없는 안내 (INFO_AI_LABEL 등)
+  // 🟢 중 직접 한 번 봐야 할 항목은 따로, 나머지는 판정에 영향 없는 안내.
+  // 사진 비교 🟢(「층 수 같음」 등)는 고칠 곳 화면에 늘어놓지 않고, 한 번만 차이가 보인 것만 알려 준다
   const greens = data.findings.filter((f) => f.severity === "GREEN");
   const checkOnce = greens.filter((f) => f.checkOnce);
-  const notes = greens.filter((f) => !f.checkOnce && f.evidence);
+  const notes = greens.filter(
+    (f) =>
+      !f.checkOnce &&
+      !!f.evidence &&
+      (!isImageRule(f.ruleCode) || ONE_RUN_ONLY.test(f.evidence)),
+  );
 
   return (
     <section className="py-10">
@@ -398,25 +432,16 @@ function Findings({
             />
           ))}
         </ol>
-        <CheckOnce findings={checkOnce} rulesByCode={rulesByCode} asOf={data.asOf} />
-        {notes.map((f, i) => {
-          const rule = rulesByCode.get(f.ruleCode);
-          const upcoming = notYetEffective(rule, data.asOf);
-          return (
-            <p key={`${f.ruleCode}-${i}`} className="flex gap-2 pt-5 text-[13px] leading-5 text-faint">
-              <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
-              <span>
-                {upcoming && (
-                  <span className="mr-1.5 rounded-full bg-signal-red-soft px-2 py-0.5 text-xs font-bold text-signal-red-ink">
-                    {koDate(rule!.effectiveFrom)}부터 금지
-                  </span>
-                )}
-                {f.ruleCode !== "INFO_AI_LABEL" && `${ruleTitle[f.ruleCode]} — `}
-                {f.evidence}
-              </span>
-            </p>
-          );
-        })}
+        <CheckOnce findings={checkOnce} />
+        {notes.map((f, i) => (
+          <p key={`${f.ruleCode}-${i}`} className="flex gap-2 pt-5 text-[13px] leading-5 text-faint">
+            <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
+            <span>
+              {f.ruleCode !== "INFO_AI_LABEL" && `${ruleTitle[f.ruleCode]} — `}
+              {readable(f.evidence)}
+            </span>
+          </p>
+        ))}
       </Col>
     </section>
   );
@@ -498,11 +523,20 @@ function Checked({
 }) {
   const greens = findings.filter((f) => f.severity === "GREEN");
   const checkOnce = greens.filter((f) => f.checkOnce);
+  // 백엔드는 걸린 항목·사진 비교 값만 보낸다. 그날 시행 중인 판정 규칙 중 응답에 없는 것은
+  // 검사했지만 걸린 곳이 없다는 뜻이라 「찾지 못했어요」로 채운다 (판정은 백엔드 overall 그대로).
+  // 안내 규칙(원산지 직접 확인·연출 이미지 문구)은 판정 규칙이 아니라 넣지 않는다.
+  const reported = new Set(findings.map((f) => f.ruleCode));
+  const notFound = [...rulesByCode.values()]
+    .filter((r) => r.severity === "RED" && inEffect(r, asOf) && !reported.has(r.code))
+    .map((r) => ({ code: r.code, text: "찾지 못했어요" }));
   // 같은 이름으로 묶이는 규칙(의약품·건강 표현)은 한 줄만
   const seen = new Set<string>();
-  const rows = greens
-    .filter((f) => !f.checkOnce)
-    .map((f) => ({ title: checkedTitle[f.ruleCode] ?? ruleTitle[f.ruleCode], text: f.evidence }))
+  const rows = [
+    ...greens.filter((f) => !f.checkOnce).map((f) => ({ code: f.ruleCode, text: readable(f.evidence) })),
+    ...notFound,
+  ]
+    .map((r) => ({ title: checkedTitle[r.code] ?? ruleTitle[r.code], text: r.text }))
     .filter((r) => (seen.has(r.title) ? false : (seen.add(r.title), true)));
 
   if (rows.length === 0 && checkOnce.length === 0) return null;
@@ -527,7 +561,7 @@ function Checked({
               </li>
             ))}
           </ul>
-          <CheckOnce findings={checkOnce} rulesByCode={rulesByCode} asOf={asOf} />
+          <CheckOnce findings={checkOnce} />
         </Col>
       </section>
     </>

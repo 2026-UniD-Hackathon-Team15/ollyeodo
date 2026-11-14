@@ -32,11 +32,24 @@
 |---|---|
 | 백엔드 | Java 21, Spring Boot 3.x, Spring Data JPA, Spring AI |
 | DB·스토리지 | Supabase (PostgreSQL, Storage) — Seoul 리전 |
-| AI | 멀티모달 비전 모델 (미정: OpenAI / Gemini / Claude) |
+| AI | OpenAI 멀티모달 (Spring AI) |
 | 프론트엔드 | Next.js 16 (App Router) · TypeScript · Tailwind CSS · shadcn/ui · TanStack Query |
-| 배포 | Docker → Render 또는 AWS EC2 |
+| 배포 | Render — 백엔드 Docker, 프론트 Node (둘 다 무료 플랜, Singapore) |
 
-## 레포 구조 (예정)
+## 배포
+
+| 대상 | 주소 | 방식 |
+|---|---|---|
+| 프론트 | https://ollyeodo-frontend.onrender.com | Render Web Service (Node) · Root `frontend` · `npm ci && npm run build` → `npm start` |
+| 백엔드 | https://ollyeodo-backend.onrender.com | Render Web Service (Docker) · Root `ollyeodo-backend` · `Dockerfile` · 헬스 체크 `/api/health` |
+
+- **`develop`에 머지되면 둘 다 자동으로 다시 배포**돼요 (해커톤 동안 배포 브랜치 = `develop`, 제출 전 `main`으로 변경).
+- 무료 플랜은 15분 정도 접속이 없으면 잠들어 **첫 접속이 50초~1분** 걸려요 → 데모·녹화 전에 두 주소를 한 번씩 열어 두기.
+- 비밀 값(Supabase·OpenAI)은 **Render 대시보드 Environment에만** 있어요. 레포·이미지에는 없음.
+- 프론트 환경변수 `NEXT_PUBLIC_API_BASE_URL`·`NEXT_PUBLIC_USE_MOCK`은 빌드 때 들어가서, 바꾸면 **Save, rebuild, and deploy** 필요.
+- 백엔드 CORS 허용 주소는 `APP_CORS_ALLOWED_ORIGINS` (프론트 주소 + `http://localhost:3000`).
+
+## 레포 구조
 
 ```text
 .

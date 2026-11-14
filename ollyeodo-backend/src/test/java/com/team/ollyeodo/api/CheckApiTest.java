@@ -62,10 +62,12 @@ class CheckApiTest {
 
     @Test
     void createsAndRetrievesCheckWithFindingsAndFreshImageUrls() throws Exception {
-        String body = mvc.perform(multipart("/api/checks").file(image("realImage"))
+        String body = mvc.perform(checkRequest().file(image("realImage"))
                         .file(image("aiImage")).param("caption", "딸기 케이크").param("asOf", "2026-11-26"))
                 .andExpect(status().isCreated()).andExpect(header().exists("Location"))
                 .andExpect(jsonPath("$.overall").value("RED"))
+                .andExpect(jsonPath("$.menuName").value("딸기 케이크"))
+                .andExpect(jsonPath("$.caption").value("딸기 케이크"))
                 .andExpect(jsonPath("$.findings[1].checkOnce").value(true))
                 .andExpect(jsonPath("$.asOf").value("2026-11-26"))
                 .andReturn().getResponse().getContentAsString();
@@ -73,12 +75,15 @@ class CheckApiTest {
         assertThat(checks.count()).isEqualTo(1);
         when(storage.signedUrl("real/photo.png")).thenReturn("https://example.test/new-real-signature");
         mvc.perform(get("/api/checks/{id}", id)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.menuName").value("딸기 케이크"))
+                .andExpect(jsonPath("$.caption").value("딸기 케이크"))
                 .andExpect(jsonPath("$.realImageUrl").value("https://example.test/new-real-signature"))
                 .andExpect(jsonPath("$.aiImageUrl").value("https://example.test/ai/photo.png"))
                 .andExpect(jsonPath("$.regenPrompt.ko").value("한글 프롬프트"))
                 .andExpect(jsonPath("$.findings[0].evidence").value("실물의 2.25배"))
                 .andExpect(jsonPath("$.findings[1].severity").value("GREEN"))
                 .andExpect(jsonPath("$.findings[1].checkOnce").value(true));
+        verify(extraction).extractCaption("딸기 케이크");
         var input = ArgumentCaptor.forClass(CheckDecisionPipeline.Input.class);
         verify(decision).evaluate(input.capture());
         assertThat(input.getValue().run1().findings()).anySatisfy(f -> {
@@ -93,7 +98,7 @@ class CheckApiTest {
         LocalDate before = LocalDate.now(ZoneId.of("Asia/Seoul"));
         when(decision.evaluate(any())).thenReturn(new CheckDecisionPipeline.Result(
                 Severity.GREEN, List.of(), "원문", null));
-        String body = mvc.perform(multipart("/api/checks").file(image("realImage"))
+        String body = mvc.perform(checkRequest().file(image("realImage"))
                         .file(image("aiImage")).param("caption", "원문"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.overall").value("GREEN"))
                 .andExpect(jsonPath("$.findings").isEmpty())
@@ -106,7 +111,7 @@ class CheckApiTest {
 
     @Test
     void rejectsInvalidSecondImageBeforeAnyUpload() throws Exception {
-        mvc.perform(multipart("/api/checks").file(image("realImage"))
+        mvc.perform(checkRequest().file(image("realImage"))
                         .file(new MockMultipartFile("aiImage", "bad.txt", "text/plain", new byte[]{1}))
                         .param("caption", "설명"))
                 .andExpect(status().isBadRequest());
@@ -116,9 +121,9 @@ class CheckApiTest {
 
     @Test
     void rejectsMissingAndEmptyImages() throws Exception {
-        mvc.perform(multipart("/api/checks").file(image("realImage")).param("caption", "설명"))
+        mvc.perform(checkRequest().file(image("realImage")).param("caption", "설명"))
                 .andExpect(status().isBadRequest());
-        mvc.perform(multipart("/api/checks").file(image("realImage"))
+        mvc.perform(checkRequest().file(image("realImage"))
                         .file(new MockMultipartFile("aiImage", "empty.png", "image/png", new byte[0]))
                         .param("caption", "설명"))
                 .andExpect(status().isBadRequest());
@@ -127,13 +132,13 @@ class CheckApiTest {
 
     @Test
     void rejectsInvalidDateAndBlankOrMissingCaption() throws Exception {
-        mvc.perform(multipart("/api/checks").file(image("realImage")).file(image("aiImage"))
+        mvc.perform(checkRequest().file(image("realImage")).file(image("aiImage"))
                         .param("caption", "설명").param("asOf", "not-a-date"))
                 .andExpect(status().isBadRequest());
-        mvc.perform(multipart("/api/checks").file(image("realImage")).file(image("aiImage"))
+        mvc.perform(checkRequest().file(image("realImage")).file(image("aiImage"))
                         .param("caption", "   "))
                 .andExpect(status().isBadRequest());
-        mvc.perform(multipart("/api/checks").file(image("realImage")).file(image("aiImage")))
+        mvc.perform(checkRequest().file(image("realImage")).file(image("aiImage")))
                 .andExpect(status().isBadRequest());
         verifyNoInteractions(storage, extraction, decision);
     }
@@ -141,7 +146,7 @@ class CheckApiTest {
     @Test
     void extractionFailureReturns422WithoutSavingCheck() throws Exception {
         when(extraction.extractImages(any(), any())).thenThrow(new ExtractionException("upstream detail", null));
-        mvc.perform(multipart("/api/checks").file(image("realImage")).file(image("aiImage"))
+        mvc.perform(checkRequest().file(image("realImage")).file(image("aiImage"))
                         .param("caption", "설명"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.detail").value("이미지 분석에 실패했습니다. 실물 사진을 다시 찍어 주세요."));
@@ -152,7 +157,7 @@ class CheckApiTest {
     @Test
     void captionFailureDoesNotSavePartialResult() throws Exception {
         when(extraction.extractCaption(anyString())).thenThrow(new ExtractionException("failed", null));
-        mvc.perform(multipart("/api/checks").file(image("realImage")).file(image("aiImage"))
+        mvc.perform(checkRequest().file(image("realImage")).file(image("aiImage"))
                         .param("caption", "설명"))
                 .andExpect(status().isUnprocessableEntity());
         assertThat(checks.count()).isZero();
@@ -165,6 +170,23 @@ class CheckApiTest {
         verifyNoInteractions(extraction, decision);
     }
 
+    @Test
+    void reportsAllMissingRequiredFields() throws Exception {
+        mvc.perform(multipart("/api/checks"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("필수값 누락: menuName, realImage, aiImage, caption"));
+        verifyNoInteractions(storage, extraction, decision);
+    }
+
+    @Test
+    void reportsBlankTextAndEmptyFileNames() throws Exception {
+        mvc.perform(multipart("/api/checks").file(new MockMultipartFile("realImage", "empty.png", "image/png", new byte[0]))
+                        .file(image("aiImage")).param("menuName", " ").param("caption", " "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("필수값 누락: menuName, realImage, caption"));
+        verifyNoInteractions(storage, extraction, decision);
+    }
+
     private static MockMultipartFile image(String name) {
         return new MockMultipartFile(name, "cake.png", "image/png", new byte[]{1, 2, 3});
     }
@@ -173,4 +195,10 @@ class CheckApiTest {
         return new ExtractedAttrs(List.of(new ExtractedAttrs.Item("딸기", count, "위")),
                 8, 0.5, "접시", List.of(), List.of(), List.of());
     }
+    private static org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder checkRequest() {
+        var request = multipart("/api/checks");
+        request.param("menuName", "딸기 케이크");
+        return request;
+    }
+
 }

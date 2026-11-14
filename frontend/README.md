@@ -13,7 +13,7 @@ npm run dev                   # http://localhost:3000
 | 환경 변수 | 설명 |
 |---|---|
 | `NEXT_PUBLIC_API_BASE_URL` | 백엔드 주소 (기본 `http://localhost:8080`) |
-| `NEXT_PUBLIC_USE_MOCK` | `true`면 백엔드 없이 목업 데이터로 동작 |
+| `NEXT_PUBLIC_USE_MOCK` | `true`면 백엔드 없이 목업 데이터로 동작 (배포할 때는 `false`) |
 
 `NEXT_PUBLIC_` 값은 브라우저에 노출됩니다. 비밀 키는 절대 넣지 않습니다.
 
@@ -22,18 +22,33 @@ npm run dev                   # http://localhost:3000
 ```
 src/
 ├─ app/
-│  ├─ menus/new/        화면 1 메뉴 등록 (#14)
-│  ├─ checks/new/       화면 2 검수하기 (#15)
-│  └─ checks/[id]/      화면 3 검수 결과 + 재생성 프롬프트 (#16)
+│  ├─ page.tsx          홈
+│  ├─ checks/new/       검수하기 — 메뉴 이름 · 실제 메뉴 사진 · AI 메뉴 사진 · 메뉴 설명 + 분석 중 로딩 (#15)
+│  ├─ checks/[id]/      검수 결과 🔴 고쳐 주세요 / 🟢 올려도 됩니다 + 고친 문구 · 다시 만들 프롬프트 (#16)
+│  ├─ not-found.tsx     없는 주소 화면
+│  └─ error.tsx         오류 화면
 ├─ components/
-│  ├─ traffic-light.tsx 신호등·신호 배지 공통 컴포넌트
-│  └─ ui/               shadcn/ui 컴포넌트
+│  ├─ home/             홈 화면
+│  ├─ traffic-light.tsx 신호등 공통 컴포넌트
+│  └─ ui/               shadcn/ui 컴포넌트 (button · skeleton · sonner)
 ├─ lib/
 │  ├─ types.ts          API 타입 (OLLYEODO_MVP.md §8·§9)
 │  ├─ severity.ts       신호 라벨·규칙 이름·안내 문구
 │  └─ api/              API 클라이언트(client.ts) · React Query 훅(queries.ts)
 └─ mocks/               목업 데이터와 목업 API
 ```
+
+## API
+
+`docs/check-api.md` 기준. 프론트가 부르는 API는 3개입니다 (메뉴 등록 API는 없습니다).
+
+| 메서드 | 경로 | 쓰는 곳 |
+|---|---|---|
+| POST | `/api/checks` | 검수하기 — multipart `realImage` · `aiImage` · `caption` · 선택 `asOf` |
+| GET | `/api/checks/{id}` | 검수 결과 |
+| GET | `/api/rules` | 결과 화면의 판정 기준표 · 법령 원문 링크 |
+
+데모용으로 `/checks/new?asOf=2026-11-26` 처럼 주소에 기준일을 붙이면 그날 시행 규칙으로 판정합니다.
 
 ## 규칙
 

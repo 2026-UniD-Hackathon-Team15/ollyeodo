@@ -98,7 +98,9 @@ public class RegenPromptBuilder {
                 keep.add(item.count() != null ? item.count() + " " + name : name);
             }
         }
-        if (real != null && real.layers() != null) keep.add(real.layers() + " layers");
+        if (real != null && real.layers() != null) {
+            keep.add(real.layers() + (real.layers() == 1 ? " layer" : " layers"));
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append("A food photo with the same composition as the real store menu photo. 45-degree top view, natural light.");
@@ -127,23 +129,81 @@ public class RegenPromptBuilder {
 
     // ───────── 문구 수정안 ─────────
 
-    /** 🔴 문구 표현을 지우거나(CAP_*) 실물 값으로 바꾸고(CAP_FACT), "연출 이미지" 안내를 붙인다. */
+    /**
+     * 🔴 문구를 고친다.
+     * <ul>
+     *   <li>CAP_FACT: 주장 값을 실물 값으로 바꾼다 ("12겹" → "8겹")</li>
+     *   <li>그 밖의 CAP_*: 표현만 지우면 "…에도 좋은 간식"처럼 어색해지므로,
+     *       표현이 든 구절(쉼표·마침표·느낌표·물음표 단위)을 통째로 지운다</li>
+     * </ul>
+     * 마지막에 "연출 이미지" 안내를 붙인다.
+     */
     private String captionFix(List<JudgedFinding> red, String caption) {
         String fixed = caption;
+        List<String> remove = new ArrayList<>();
         for (var f : red) {
             if (!f.ruleCode().startsWith("CAP_")) continue;
             String ai = value(f.aiValue());
-            if (ai.isEmpty() || !fixed.contains(ai)) continue;
+            if (ai.isEmpty()) continue;
             String real = value(f.realValue());
-            fixed = "CAP_FACT".equals(f.ruleCode()) && !real.isEmpty()
-                    ? fixed.replace(ai, real)
-                    : fixed.replace(ai, "");
+            if ("CAP_FACT".equals(f.ruleCode()) && !real.isEmpty()) {
+                fixed = fixed.replace(ai, real);
+            } else {
+                remove.add(ai);
+            }
         }
-        fixed = tidy(fixed);
+        fixed = tidy(removeClauses(fixed, remove));
         if (!fixed.contains("연출된 이미지")) {
             fixed = fixed.isEmpty() ? STAGED_NOTICE : fixed + " " + STAGED_NOTICE;
         }
         return fixed;
+    }
+
+    /**
+     * 걸린 표현이 든 구절을 통째로 지운다.
+     * 구절 경계는 쉼표·마침표·느낌표·물음표 뒤에 공백이나 끝이 올 때, 또는 줄바꿈이다
+     * ("1.5배", "1,000원" 같은 숫자 안의 구두점에서는 자르지 않는다).
+     * 다 지우면 문구가 비는 경우(구절이 하나뿐인 문구 등)에는 표현만 지운다.
+     */
+    static String removeClauses(String text, List<String> expressions) {
+        List<String> targets = expressions.stream().filter(e -> !e.isBlank() && text.contains(e)).toList();
+        if (targets.isEmpty()) return text;
+
+        List<String> clauses = splitClauses(text);
+        // 구절 경계를 넘는 표현은 구절 단위로 못 찾으므로 표현만 지운다.
+        String working = text;
+        for (String t : targets) {
+            if (clauses.stream().noneMatch(c -> c.contains(t))) working = working.replace(t, "");
+        }
+        if (!working.equals(text)) clauses = splitClauses(working);
+
+        StringBuilder kept = new StringBuilder();
+        for (String c : clauses) {
+            if (targets.stream().noneMatch(c::contains)) kept.append(c);
+        }
+        if (kept.toString().isBlank()) {
+            String fallback = working;
+            for (String t : targets) fallback = fallback.replace(t, "");
+            return fallback;
+        }
+        return kept.toString();
+    }
+
+    private static List<String> splitClauses(String s) {
+        List<String> out = new ArrayList<>();
+        int start = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            boolean punct = c == ',' || c == '.' || c == '!' || c == '?';
+            boolean boundary = c == '\n'
+                    || (punct && (i + 1 == s.length() || Character.isWhitespace(s.charAt(i + 1))));
+            if (boundary) {
+                out.add(s.substring(start, i + 1));
+                start = i + 1;
+            }
+        }
+        if (start < s.length()) out.add(s.substring(start));
+        return out;
     }
 
     /** 표현을 지운 뒤 남는 빈칸·쉼표·느낌표를 정리한다. */

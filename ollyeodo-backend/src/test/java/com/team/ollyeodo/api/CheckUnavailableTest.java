@@ -18,10 +18,16 @@ class CheckUnavailableTest {
 
     @Test
     void disabledDependenciesDoNotProduceAnUnverifiedGreenResult() throws Exception {
-        mvc.perform(multipart("/api/checks")
+        mvc.perform(checkRequest()
                         .file(new MockMultipartFile("realImage", "real.png", "image/png", new byte[]{1}))
                         .file(new MockMultipartFile("aiImage", "ai.png", "image/png", new byte[]{1}))
                         .param("caption", "설명"))
                 .andExpect(status().isServiceUnavailable());
     }
+    private static org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder checkRequest() {
+        var request = multipart("/api/checks");
+        request.param("menuName", "딸기 케이크");
+        return request;
+    }
+
 }

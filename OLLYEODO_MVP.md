@@ -195,7 +195,7 @@
 | 판정 | 순수 Java 클래스 (ComparisonService, RuleEngine) + JUnit | AI 없이 기준값으로 판정, 테스트로 증명 |
 | 자기일관성 | 같은 스키마로 2회 추출 후 비교 | AI가 확신 없는 값을 걸러냄 |
 | 이미지 저장 | Supabase Storage (`images` 버킷, ImageStorage 인터페이스로 감쌈) | 업로드 파일 보관 |
-| 배포 | Docker 이미지 → Render 또는 AWS EC2 | 발표자료에 넣을 접속 URL |
+| 배포 | Render 무료 플랜(Singapore): 백엔드 Docker · 프론트 Node | 프론트 https://ollyeodo-frontend.onrender.com · 백엔드 https://ollyeodo-backend.onrender.com |
 | 프론트엔드 | Next.js 16 · TypeScript · Tailwind · shadcn/ui | 화면 2개 + 홈 |
 
 ### 7.1 POST /api/checks 내부 흐름
@@ -454,8 +454,8 @@ supabase:
 |---|---|---|
 | 비전 API 선택 | **OpenAI로 확정** (PR #29) | #7 |
 | 프론트엔드 스택 | **Next.js 16으로 확정** (PR #24) | #2 |
-| 프론트엔드 배포처 | 미결 | #18 |
-| 백엔드 배포처 (Render vs AWS EC2) | 미결 | #13 |
+| 프론트엔드 배포처 | **Render(무료)로 확정** — Vercel은 계정 구독 정지로 제외 | #18 |
+| 백엔드 배포처 | **Render(무료, Docker)로 확정** | #13 |
 | 팀원별 담당 배정 | 미결 | 전체 |
 | ⚖️ 식품표시광고법의 카페·음식점 메뉴 광고 적용 범위 — 국가법령정보센터 원문 확인 | 발표 전 확인 | #5 |
 | Uni-D 계정 Org 초대 | 필수, 즉시 | — |
