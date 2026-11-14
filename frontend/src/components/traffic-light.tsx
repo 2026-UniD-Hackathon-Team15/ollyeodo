@@ -39,16 +39,16 @@ export function SeverityBadge({
   );
 }
 
-/** 신호등에 켤 불 — 결과 신호(RED·GREEN)와 "비교하고 있어요" 화면의 노란불(COMPARING) */
+/** 신호등에 켤 불 — 결과 신호(RED·GREEN)와 "비교하고 있어요"(COMPARING: 빨강·초록 번갈아 깜빡임) */
 export type SignalState = Severity | "COMPARING";
 
-const order: Severity[] = ["RED", "YELLOW", "GREEN"];
-
 /**
- * 가로 3구 신호등 — 피그마 Signal v2 (11:107 RED · 11:111 YELLOW · 11:115 GREEN), 74×28.
+ * 가로 2구 신호등 (빨강·초록) — 결과가 🔴·🟢 두 가지뿐이라 노란불을 뺐다 (§6, #33).
+ * 로고의 「:」(위 빨강·아래 민트)와 같은 두 불이다.
  *
- * 디자인 기준: 결과 화면은 빨강·초록만 켠다. 노란불은 분석 중("비교하고 있어요") 화면에서만
- * `state="COMPARING"`으로 켜고 깜빡인다. 판정 값(§6 severity)은 그대로 두고 보여 주는 방식만 정한다.
+ * - RED / GREEN: 그 불만 켠다 (결과 화면·홈 예시)
+ * - COMPARING: 분석 중 — 빨강·초록이 번갈아 깜빡인다
+ * 판정 값(§6 severity)은 그대로 두고 보여 주는 방식만 정한다. YELLOW 가 와도 노란불은 켜지 않는다.
  */
 export function TrafficLight({
   state,
@@ -59,27 +59,29 @@ export function TrafficLight({
   size?: "md" | "lg";
   className?: string;
 }) {
-  const on: Severity = state === "COMPARING" ? "YELLOW" : state;
-  const label = state === "COMPARING" ? "비교하고 있어요" : severityMeta[state].label;
+  const comparing = state === "COMPARING";
+  const label = comparing ? "비교하고 있어요" : severityMeta[state].label;
+  const lamps = [
+    { color: lamp.RED, lit: comparing || state === "RED", blink: "motion-safe:animate-signal-stop" },
+    { color: lamp.GREEN, lit: comparing || state === "GREEN", blink: "motion-safe:animate-signal-go" },
+  ];
   return (
     <span
       role="img"
       aria-label={`신호: ${label}`}
       className={cn(
         "inline-flex shrink-0 items-center rounded-full bg-ink",
-        size === "md" ? "h-7 w-[74px] justify-between px-[9px]" : "h-10 w-[106px] justify-between px-[13px]",
+        size === "md" ? "h-7 gap-1.5 px-[9px]" : "h-10 gap-2 px-[13px]",
         className,
       )}
     >
-      {order.map((s) => (
+      {lamps.map((l) => (
         <span
-          key={s}
+          key={l.color}
           className={cn(
             "rounded-full",
             size === "md" ? "size-3.5" : "size-5",
-            s === on
-              ? cn(lamp[s], state === "COMPARING" && "motion-safe:animate-signal-blink")
-              : "bg-white/[0.13]",
+            l.lit ? cn(l.color, comparing && l.blink) : "bg-white/[0.13]",
           )}
         />
       ))}

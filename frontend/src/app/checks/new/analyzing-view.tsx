@@ -4,6 +4,7 @@
 // 검수하기 화면에서 고른 사진(blob URL)을 그대로 보여줘야 해서 next/image 대신 img를 쓴다.
 
 import { useEffect, useState } from "react";
+import { TrafficLight } from "@/components/traffic-light";
 import { cn } from "@/lib/utils";
 import styles from "./analyzing-view.module.css";
 
@@ -52,9 +53,8 @@ export function AnalyzingView({ image }: { image: string }) {
   return (
     <div className={styles.page}>
       <div className={styles.col} aria-live="polite">
-        <div className={cn(styles.signal, styles.reveal)} style={delay(0)} aria-hidden="true">
-          <i className={styles.stop} />
-          <i className={styles.go} />
+        <div className={styles.reveal} style={delay(0)}>
+          <TrafficLight state="COMPARING" />
         </div>
 
         <h1 className={cn(styles.title, styles.reveal)} style={{ ...delay(1), whiteSpace: "pre-line" }}>

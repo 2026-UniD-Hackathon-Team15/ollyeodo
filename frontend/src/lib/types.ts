@@ -9,7 +9,6 @@ export type RuleCode =
   | "IMG_EXTRA_ITEM"
   | "IMG_COUNT"
   | "IMG_FILL"
-  | "IMG_LAYER"
   | "CAP_FACT"
   | "CAP_ORIGIN"
   | "CAP_DISEASE"
@@ -63,7 +62,7 @@ export interface Rule {
   preEffectiveSeverity?: Severity | null;
 }
 
-/** POST /api/checks 입력 — multipart realImage · aiImage · caption · asOf (§9, docs/check-api.md) */
+/** POST /api/checks 입력 — multipart menuName · realImage · aiImage · caption · asOf (§9, docs/check-api.md) */
 export interface CreateCheckInput {
   menuName: string;
   realImage: File;

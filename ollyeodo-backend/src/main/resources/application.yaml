@@ -37,6 +37,10 @@ spring:
       max-file-size: 10MB
       max-request-size: 25MB
 
+server:
+  # 배포 환경(Render 등)이 넘겨주는 PORT를 쓰고, 로컬은 8080
+  port: ${PORT:8080}
+
 supabase:
   url: ${SUPABASE_URL:}
   service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}   # 서버 환경변수에만. 프론트와 깃에 절대 넣지 않음

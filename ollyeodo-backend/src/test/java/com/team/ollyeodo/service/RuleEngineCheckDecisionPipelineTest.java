@@ -72,7 +72,8 @@ class RuleEngineCheckDecisionPipelineTest {
                 });
         assertThat(result.regenPrompt()).isNotNull();
         assertThat(result.regenPrompt().ko()).contains("넣지 말 것", "블루베리");
-        assertThat(result.captionFix()).isEqualTo("8겹 크레이프, 딸기 (사진은 연출된 이미지입니다)");
+        // #48: 걸린 표현("디톡스")만 지우지 않고 그 표현이 든 구절("디톡스 딸기")을 통째로 지운다
+        assertThat(result.captionFix()).isEqualTo("8겹 크레이프 (사진은 연출된 이미지입니다)");
     }
 
     @Test

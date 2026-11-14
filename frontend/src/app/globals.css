@@ -7,7 +7,7 @@
 /*
  * Re:Ad 색표 — 피그마 「컴포넌트 v2」(11:83) 기준. 값은 피그마와 똑같이 맞춘다.
  * 신호등: 빨강 = 고쳐 주세요, 초록(민트) = 올려도 돼요.
- * 노랑은 결과 신호로 쓰지 않고 "비교하고 있어요"(분석 중) 화면에서만 쓴다.
+ * 신호등은 2구(빨강·초록)다. 노랑은 신호등에 쓰지 않는다 (비교 중에는 빨강·초록이 번갈아 깜빡인다).
  */
 @theme {
   --color-ink: #191f28;
@@ -28,11 +28,16 @@
   --color-signal-red-soft: #feeef0;
   --color-signal-red-ink: #d22030;
 
-  /* 노란불(비교 중) 깜빡임 */
-  --animate-signal-blink: signal-blink 1.1s ease-in-out infinite;
-  @keyframes signal-blink {
-    0%, 100% { opacity: 1; box-shadow: 0 0 10px rgb(255 179 49 / 0.9); }
-    50% { opacity: 0.45; box-shadow: 0 0 2px rgb(255 179 49 / 0.2); }
+  /* 비교 중 신호등 — 빨강·초록 번갈아 깜빡임 (분석 중 화면과 같은 박자) */
+  --animate-signal-stop: signal-stop 1.2s ease-in-out infinite;
+  --animate-signal-go: signal-go 1.2s ease-in-out infinite;
+  @keyframes signal-stop {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
+  }
+  @keyframes signal-go {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 1; }
   }
 }
 

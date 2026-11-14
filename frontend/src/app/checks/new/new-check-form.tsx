@@ -1,8 +1,5 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-// 미리보기는 사용자가 고른 파일(blob URL)을 바로 보여줘야 해서 next/image 대신 img를 쓴다.
-
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -10,15 +7,12 @@ import { ApiError } from "@/lib/api/client";
 import { useCreateCheck } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 import { AnalyzingView } from "./analyzing-view";
+import { PhotoDrop } from "./photo-drop";
 import styles from "./new-check.module.css";
 
 const MAX_SIZE = 10 * 1024 * 1024;
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const CAPTION_MAX = 300;
-
-function formatSize(bytes: number) {
-  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
-  return `${Math.round(bytes / 1024)}KB`;
-}
 
 /** 등장 순서: 0.1초부터 0.06초 간격 */
 function delay(index: number) {
@@ -34,8 +28,9 @@ function shake(el: HTMLElement | null) {
 }
 
 function isValidImage(file: File) {
-  if (file.type !== "image/jpeg" && file.type !== "image/png") {
-    toast.error("JPG, PNG 사진만 올릴 수 있어요");
+  // 백엔드가 받는 형식과 같게 (CheckService: JPEG·PNG·WEBP)
+  if (!IMAGE_TYPES.includes(file.type)) {
+    toast.error("JPG, PNG, WEBP 사진만 올릴 수 있어요");
     return false;
   }
   if (file.size > MAX_SIZE) {
@@ -64,7 +59,6 @@ export function NewCheckForm() {
   const [realPreview, setRealPreview] = useState("");
   const [aiFile, setAiFile] = useState<File | null>(null);
   const [aiPreview, setAiPreview] = useState("");
-  const [dragOver, setDragOver] = useState(false);
   const [caption, setCaption] = useState("");
 
   const nameFieldRef = useRef<HTMLDivElement>(null);
@@ -74,8 +68,6 @@ export function NewCheckForm() {
   const areaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const realInputRef = useRef<HTMLInputElement>(null);
-  const aiInputRef = useRef<HTMLInputElement>(null);
-  const dragDepth = useRef(0);
   /** 이 화면이 지금 보이는지 — 결과를 기다리는 동안 떠나면 false */
   const activeRef = useRef(false);
 
@@ -115,19 +107,19 @@ export function NewCheckForm() {
       setRealPreview("");
       setAiFile(null);
       setAiPreview("");
-      setDragOver(false);
       setCaption("");
-      dragDepth.current = 0;
     };
   }, []);
 
-  function onRealFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file && isValidImage(file)) {
-      setRealFile(file);
-      setRealPreview(URL.createObjectURL(file));
-    }
-    e.target.value = "";
+  function setRealPhoto(file: File) {
+    if (!isValidImage(file)) return;
+    setRealFile(file);
+    setRealPreview(URL.createObjectURL(file));
+  }
+
+  function clearRealPhoto() {
+    setRealFile(null);
+    setRealPreview("");
   }
 
   function setAiPhoto(file: File) {
@@ -139,46 +131,6 @@ export function NewCheckForm() {
   function clearAiPhoto() {
     setAiFile(null);
     setAiPreview("");
-  }
-
-  function openAiPicker() {
-    aiInputRef.current?.click();
-  }
-
-  function onDropClick() {
-    if (!aiFile) openAiPicker();
-  }
-
-  function onDropKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      onDropClick();
-    }
-  }
-
-  function onAiFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) setAiPhoto(file);
-    e.target.value = "";
-  }
-
-  function onDragEnter(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    dragDepth.current += 1;
-    setDragOver(true);
-  }
-
-  function onDragLeave() {
-    dragDepth.current = Math.max(0, dragDepth.current - 1);
-    if (dragDepth.current === 0) setDragOver(false);
-  }
-
-  function onDrop(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    dragDepth.current = 0;
-    setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) setAiPhoto(file);
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -260,7 +212,7 @@ export function NewCheckForm() {
 
           <div className={cn(styles.group, styles.reveal)} style={delay(3)}>
             <div className={styles.label}>
-              실제 메뉴 사진 <small>매장에서 직접 찍은 사진 1장</small>
+              실제 메뉴 사진 <small>직접 찍은 사진</small>
               {/* 피그마 「최근 사진에서 고르기」 — 휴대폰에서는 파일 선택 창이 최근 사진(사진 보관함)을 먼저 보여 준다 */}
               <button
                 type="button"
@@ -270,104 +222,31 @@ export function NewCheckForm() {
                 최근 사진에서 고르기
               </button>
             </div>
-            <div className={styles.photo} ref={realRowRef}>
-              <div className={styles.thumb}>
-                {realPreview && <img src={realPreview} alt="실제 메뉴 사진" />}
-              </div>
-              <div className={styles.meta}>
-                <span className={styles.fileName}>{realFile ? realFile.name : "사진을 골라 주세요"}</span>
-                {realFile && <span className={styles.fileSize}>{formatSize(realFile.size)}</span>}
-              </div>
-              <button type="button" className={styles.changeBtn} onClick={() => realInputRef.current?.click()}>
-                {realFile ? "바꾸기" : "추가"}
-              </button>
-              <input
-                ref={realInputRef}
-                type="file"
-                accept="image/jpeg,image/png"
-                className={styles.hiddenInput}
-                onChange={onRealFileChange}
-              />
-            </div>
+            <PhotoDrop
+              ref={realRowRef}
+              inputRef={realInputRef}
+              label="실제 메뉴 사진"
+              file={realFile}
+              preview={realPreview}
+              onPick={setRealPhoto}
+              onClear={clearRealPhoto}
+            />
+            <p className={styles.hint}>
+              AI 메뉴 사진과 비슷한 각도에서 찍어 주세요. 더 정확하게 비교할 수 있어요.
+            </p>
           </div>
 
           <div className={cn(styles.group, styles.reveal)} style={delay(4)}>
             <div className={styles.label}>
               AI 메뉴 사진 <small>AI로 만들거나 보정한 메뉴 사진</small>
             </div>
-            <div
+            <PhotoDrop
               ref={dropRef}
-              className={cn(styles.drop, dragOver && styles.dropOver, aiFile && styles.dropHasImage)}
-              tabIndex={0}
-              role="button"
-              aria-label="AI 메뉴 사진 추가"
-              onClick={onDropClick}
-              onKeyDown={onDropKeyDown}
-              onDragEnter={onDragEnter}
-              onDragOver={(e) => e.preventDefault()}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-            >
-              {!aiFile && (
-                <>
-                  <div className={styles.dropIcon}>
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect width="18" height="18" x="3" y="3" rx="2" />
-                      <circle cx="9" cy="9" r="2" />
-                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                    </svg>
-                  </div>
-                  <div className={styles.dropTitle}>{dragOver ? "여기에 놓아 주세요" : "이미지 추가"}</div>
-                  <div className={styles.dropSub}>끌어다 놓아도 돼요 · JPG, PNG 10MB까지</div>
-                </>
-              )}
-
-              {aiFile && (
-                <div className={styles.preview} key={aiPreview}>
-                  <img src={aiPreview} alt="AI 메뉴 사진 미리보기" />
-                  <span className={styles.previewTag}>AI 메뉴 사진</span>
-                  <div className={styles.previewBar}>
-                    <span className={styles.previewName}>{aiFile.name}</span>
-                    <small className={styles.previewSize}>{formatSize(aiFile.size)}</small>
-                    <button
-                      type="button"
-                      className={styles.previewBtn}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openAiPicker();
-                      }}
-                    >
-                      바꾸기
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.previewBtn}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        clearAiPhoto();
-                      }}
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-            <input
-              ref={aiInputRef}
-              type="file"
-              accept="image/jpeg,image/png"
-              className={styles.hiddenInput}
-              onChange={onAiFileChange}
+              label="AI 메뉴 사진"
+              file={aiFile}
+              preview={aiPreview}
+              onPick={setAiPhoto}
+              onClear={clearAiPhoto}
             />
           </div>
 

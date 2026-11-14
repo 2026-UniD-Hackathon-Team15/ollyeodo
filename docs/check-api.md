@@ -2,10 +2,10 @@
 
 ## 계약
 
-- `POST /api/checks`: multipart `realImage`, `aiImage`, `caption`, 선택 `asOf` (`yyyy-MM-dd`). 기본 기준일은 Asia/Seoul 오늘.
+- `POST /api/checks`: multipart `menuName`, `realImage`, `aiImage`, `caption`, 선택 `asOf` (`yyyy-MM-dd`). 기본 기준일은 Asia/Seoul 오늘.
 - 성공: 201과 `Location: /api/checks/{id}`. `GET /api/checks/{id}`: 200, 같은 응답 필드.
 - 두 이미지 모두 비어 있지 않은 JPEG/PNG/WEBP여야 한다. MIME 타입 기준 검증이며 실제 픽셀 디코딩 검증은 하지 않는다.
-- 잘못된/누락 입력: 400, AI 추출 실패: 422, 없는 ID: 404, AI/판정 의존성 미설정: 503.
+- 잘못된/누락 입력(`menuName`·`caption` 빈 값 포함): 400, AI 추출 실패: 422, 없는 ID: 404, AI/판정 의존성 미설정: 503.
 - `findings`는 GREEN 안내도 포함하며 `checkOnce`를 보존한다. GREEN의 `regenPrompt`는 null이다 (#11 확정 댓글).
 - 저장하는 것은 이미지 경로이며 POST/GET마다 Storage URL을 새로 발급한다.
 
