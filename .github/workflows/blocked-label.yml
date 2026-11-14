@@ -1,0 +1,68 @@
+# 선행 이슈(blocked by)가 모두 닫히면 `blocked` 라벨을 자동으로 뗀다.
+# 선행 이슈가 다시 열리면 `blocked` 라벨을 다시 붙인다.
+# Actions 탭에서 수동 실행(workflow_dispatch)하면 열린 이슈 전체를 다시 맞춘다.
+name: blocked 라벨 자동 관리
+
+on:
+  issues:
+    types: [closed, reopened]
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: blocked-label
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const LABEL = 'blocked';
+            const { owner, repo } = context.repo;
+
+            const blockedBy = (n) => github.paginate(
+              'GET /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by',
+              { owner, repo, issue_number: n, per_page: 100 });
+            const blocking = (n) => github.paginate(
+              'GET /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocking',
+              { owner, repo, issue_number: n, per_page: 100 });
+
+            async function sync(issue) {
+              if (issue.state !== 'open' || issue.pull_request) return;
+              const blockers = await blockedBy(issue.number);
+              const open = blockers.filter(b => b.state === 'open').map(b => `#${b.number}`);
+              const has = (issue.labels || []).some(l => (l.name || l) === LABEL);
+              if (open.length === 0 && has) {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: LABEL })
+                  .catch(e => { if (e.status !== 404) throw e; });
+                core.info(`#${issue.number}: 선행 이슈가 모두 닫힘 → '${LABEL}' 제거`);
+              } else if (open.length > 0 && !has) {
+                await github.rest.issues.addLabels({ owner, repo, issue_number: issue.number, labels: [LABEL] });
+                core.info(`#${issue.number}: 열린 선행 이슈 ${open.join(', ')} → '${LABEL}' 추가`);
+              } else {
+                core.info(`#${issue.number}: 변경 없음 (열린 선행 이슈: ${open.join(', ') || '없음'})`);
+              }
+            }
+
+            if (context.eventName === 'workflow_dispatch') {
+              const issues = await github.paginate(github.rest.issues.listForRepo,
+                { owner, repo, state: 'open', per_page: 100 });
+              for (const issue of issues) await sync(issue);
+              return;
+            }
+
+            const changed = context.payload.issue;
+            const dependents = await blocking(changed.number);
+            if (dependents.length === 0) {
+              core.info(`#${changed.number}이(가) 막고 있는 이슈 없음`);
+              return;
+            }
+            for (const d of dependents) {
+              const { data } = await github.rest.issues.get({ owner, repo, issue_number: d.number });
+              await sync(data);
+            }
