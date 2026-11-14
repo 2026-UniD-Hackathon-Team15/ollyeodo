@@ -30,6 +30,8 @@ const buttonVariants = cva(
         "icon-sm":
           "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
         "icon-lg": "size-9",
+        /** 피그마 Button L (56px, 둥근 16px, 17px 굵게) */
+        cta: "h-14 gap-2 rounded-2xl px-7 text-[17px] leading-6 font-bold",
       },
     },
     defaultVariants: {
