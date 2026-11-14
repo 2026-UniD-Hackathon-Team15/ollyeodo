@@ -50,7 +50,7 @@ class CaptionService {
             if (claims.layers() != null && realFirst.layers() != null
                     && !claims.layers().equals(realFirst.layers())) {
                 hits.add(CaptionHit.of("CAP_FACT",
-                        "문구: " + claims.layers() + "겹", "실물: " + realFirst.layers() + "겹",
+                        claims.layers() + "겹", realFirst.layers() + "겹",
                         "메뉴 설명의 층 수가 실물 사진과 다름"));
             }
             // 1) CAP_FACT: 재료 개수
@@ -60,8 +60,8 @@ class CaptionService {
                     Integer realCount = countOf(realFirst, i.name());
                     if (realCount != null && !realCount.equals(i.count())) {
                         hits.add(CaptionHit.of("CAP_FACT",
-                                "문구: " + i.name() + " " + i.count() + "개",
-                                "실물: " + i.name() + " " + realCount + "개",
+                                i.name() + " " + i.count() + "개",
+                                i.name() + " " + realCount + "개",
                                 "메뉴 설명의 재료 개수가 실물 사진과 다름"));
                     }
                 }

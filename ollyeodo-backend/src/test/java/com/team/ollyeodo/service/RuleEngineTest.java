@@ -213,8 +213,8 @@ class RuleEngineTest {
 
         JudgedFinding f = find(r, "CAP_FACT").orElseThrow();
         assertThat(f.severity()).isEqualTo(Severity.RED);
-        assertThat(f.aiValue()).isEqualTo("문구: 12겹");
-        assertThat(f.realValue()).isEqualTo("실물: 8겹");
+        assertThat(f.aiValue()).isEqualTo("12겹");
+        assertThat(f.realValue()).isEqualTo("8겹");
     }
 
     @Test
