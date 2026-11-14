@@ -3,7 +3,7 @@
 > AI로 만든 메뉴 홍보물을 **우리 가게 실물과 대조해** 과장과 오류를 찾아주는 검수 서비스
 > Uni-DTHON 2026 · Team 15
 
-사장님이 AI로 만든 메뉴 이미지와 인스타 문구를 실제 메뉴 정보·실물 사진과 비교해 항목별 🟢🟡🔴 신호와 **근거 법령 조항**을 보여주고, 고쳐서 다시 만들 수 있는 재생성 프롬프트와 캡션 수정안을 함께 돌려줍니다.
+사장님이 AI로 만든 메뉴 이미지와 홍보 문구를 **실제 음식 사진**과 비교해 🟢 PASS · 🟠 PASS(주의) · 🔴 FAIL 결과와 항목별 **사유·근거 법령 조항**을 보여주고, 고쳐서 다시 만들 수 있는 개선 프롬프트와 문구 수정안을 함께 돌려줍니다.
 
 > [!IMPORTANT]
 > **⚖️ 판정 기준은 법령에 근거합니다.** 모든 규칙에는 근거 조항과 시행일이 붙고, 판정은 AI가 아니라 코드(RuleEngine)가 합니다.
@@ -32,7 +32,7 @@
 ```text
 .
 ├─ ollyeodo-backend/   Spring Boot API (com.team.ollyeodo)
-├─ frontend/           화면 3개 (메뉴 등록 · 검수 요청 · 검수 결과)
+├─ frontend/           화면 2개 (검수 요청 · 검수 결과)
 ├─ docs/               팀 규칙 등 보조 문서
 ├─ OLLYEODO_MVP.md
 └─ .env.example
@@ -112,7 +112,7 @@ cd ollyeodo-backend
 MVP §6의 1.2/1.5배는 AI·실물 간 판정 임계값이며 추출 오차 허용값이 아닙니다.
 같은 사진 2회 추출의 `fill_ratio` 허용 오차 `ImageExtractionResult.FILL_RATIO_TOLERANCE`는
 **0.05(5%p)** 입니다 (PM 확정, MVP §6.3). 절대 차이가 0.05 이하면 MATCH, 넘으면 MISMATCH,
-확인 불가 값은 UNKNOWN으로 반환합니다. MISMATCH는 RuleEngine(#9)에서 🔴 대신 🟡 "직접 확인 필요"로 내립니다.
+확인 불가 값은 UNKNOWN으로 반환합니다. MISMATCH는 RuleEngine(#9)에서 🔴 대신 🟠(PASS 주의) + `uncertain` "AI가 확신하지 못한 값"으로 내립니다.
 §6 판정 임계값과 심각도는 변경하지 않습니다.
 
 live 테스트의 재료명 목록은 데모 입력 `딸기`, `휘핑크림`이며 실제 메뉴 등록값을 대신하지 않습니다.
