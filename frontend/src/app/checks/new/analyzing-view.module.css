@@ -1,0 +1,235 @@
+/* 화면 02 분석 중 — 피그마 「02 분석 중」 13:440. 헤더·푸터는 공용 레이아웃을 쓴다 */
+
+/* 색은 globals.css 공통 토큰을 쓴다 (화면 전용 값만 여기 둔다) */
+.page {
+  --ink: var(--color-ink);
+  --body: var(--color-sub);
+  --muted: var(--color-faint);
+  --field: var(--color-surface);
+  --line: var(--color-line);
+  --green-bright: var(--color-signal-green);
+  --green-soft: var(--color-signal-green-soft);
+  --red: var(--color-signal-red);
+  --dim: #3a434f;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color: var(--ink);
+}
+
+.col {
+  width: 600px;
+  margin: 0 auto;
+  padding: 48px 0 72px;
+}
+
+/* 신호등 (빨강·초록 번갈아 깜빡임) */
+.signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 99px;
+  background: var(--ink);
+}
+.signal i {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+.stop {
+  background: var(--red) !important;
+  animation: blinkStop 1.2s ease-in-out infinite;
+}
+.go {
+  background: var(--green-bright) !important;
+  animation: blinkGo 1.2s ease-in-out infinite;
+}
+@keyframes blinkStop {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+@keyframes blinkGo {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+.title {
+  margin-top: 22px;
+  font-size: 32px;
+  line-height: 44px;
+  letter-spacing: -1.12px;
+  font-weight: 700;
+}
+.lead {
+  margin-top: 12px;
+  font-size: 17px;
+  line-height: 27px;
+  color: var(--body);
+}
+
+/* 사진 + 스캔 라인 */
+.thumb {
+  position: relative;
+  margin-top: 28px;
+  width: 120px;
+  height: 90px;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 30px;
+  background: linear-gradient(to bottom, rgba(15, 163, 127, 0), rgba(15, 163, 127, 0.35));
+  border-bottom: 2px solid var(--green-bright);
+  animation: scan 1.6s ease-in-out infinite;
+}
+@keyframes scan {
+  0% { transform: translateY(-30px); }
+  100% { transform: translateY(90px); }
+}
+
+/* 진행 막대 */
+.progress {
+  position: relative;
+  margin-top: 36px;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--line);
+  overflow: hidden;
+}
+.progressBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 99px;
+  background: var(--green-bright);
+  transition: width 0.8s var(--ease);
+}
+.progressBar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.45) 50%, rgba(255, 255, 255, 0) 100%);
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/* 단계 목록 */
+.steps {
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  font-size: 17px;
+  line-height: 26px;
+  font-weight: 500;
+  color: var(--muted);
+  transition: color 0.3s;
+}
+.stepIcon {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 99px;
+  background: var(--field);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s;
+}
+.stepDone {
+  color: var(--ink);
+}
+.stepDone .stepIcon {
+  background: var(--green-bright);
+}
+.stepDone .stepIcon svg {
+  animation: pop 0.4s var(--ease);
+}
+.stepCurrent {
+  color: var(--ink);
+  font-weight: 700;
+}
+.stepCurrent .stepIcon {
+  background: var(--green-soft);
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--green-bright);
+}
+.stepCurrent .stepIcon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 99px;
+  border: 2px solid var(--green-bright);
+  animation: ring 1.4s ease-out infinite;
+}
+@keyframes pop {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+@keyframes ring {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+/* 안내 박스 */
+.note {
+  margin-top: 32px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--field);
+  font-size: 15px;
+  line-height: 23px;
+  color: var(--body);
+  word-break: keep-all;
+}
+
+/* ---------- 처음 나타날 때 ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: reveal 0.7s var(--ease) both;
+}
+@keyframes reveal {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 680px) {
+  .col { width: auto; padding: 40px 20px 56px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before,
+  .page *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
