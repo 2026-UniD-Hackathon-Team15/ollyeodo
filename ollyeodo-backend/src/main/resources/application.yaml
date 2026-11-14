@@ -28,6 +28,11 @@ spring:
     url: ${SUPABASE_DB_URL:jdbc:h2:mem:ollyeodo;MODE=PostgreSQL}
     username: ${SUPABASE_DB_USERNAME:sa}
     password: ${SUPABASE_DB_PASSWORD:}
+    hikari:
+      # Supabase 세션 풀러는 연결 20개가 한도. 서버마다 기본 10개를 잡으면 배포(새·예전 서버 동시) +
+      # 로컬 서버만으로 한도를 넘어 새 서버가 뜨지 못한다. AI 대기 중에는 DB를 쓰지 않아 4개면 충분하다
+      maximum-pool-size: ${DB_POOL_SIZE:4}
+      minimum-idle: ${DB_POOL_MIN_IDLE:1}
   jpa:
     hibernate:
       ddl-auto: update   # 해커톤용. 테이블 생성 직후 SQL 에디터에서 RLS를 켠다
