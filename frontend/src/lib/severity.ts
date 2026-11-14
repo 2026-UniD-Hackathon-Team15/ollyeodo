@@ -42,7 +42,7 @@ export const ruleTitle: Record<RuleCode, string> = {
   CAP_SUPERLATIVE: "근거 없는 최상급·비교",
   CAP_FAKE_REVIEW: "꾸민 후기",
   AI_VIRTUAL_EXPERT: "AI 가상 전문가",
-  INFO_AI_LABEL: "주의 문구",
+  INFO_AI_LABEL: "연출 이미지 문구",
 };
 
 /**

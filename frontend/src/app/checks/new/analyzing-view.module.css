@@ -22,40 +22,6 @@
   padding: 48px 0 72px;
 }
 
-/* 신호등 (빨강·초록 번갈아 깜빡임) */
-.signal {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 9px;
-  border-radius: 99px;
-  background: var(--ink);
-}
-.signal i {
-  display: block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--dim);
-}
-.stop {
-  background: var(--red) !important;
-  animation: blinkStop 1.2s ease-in-out infinite;
-}
-.go {
-  background: var(--green-bright) !important;
-  animation: blinkGo 1.2s ease-in-out infinite;
-}
-@keyframes blinkStop {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.25; }
-}
-@keyframes blinkGo {
-  0%, 100% { opacity: 0.25; }
-  50% { opacity: 1; }
-}
-
 .title {
   margin-top: 22px;
   font-size: 32px;

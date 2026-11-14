@@ -122,7 +122,7 @@ export function PhotoDrop({
               </svg>
             </div>
             <div className={styles.dropTitle}>{dragOver ? "여기에 놓아 주세요" : "이미지 추가"}</div>
-            <div className={styles.dropSub}>끌어다 놓아도 돼요 · JPG, PNG 10MB까지</div>
+            <div className={styles.dropSub}>끌어다 놓아도 돼요 · JPG, PNG, WEBP 10MB까지</div>
           </>
         )}
 
@@ -160,7 +160,7 @@ export function PhotoDrop({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png"
+        accept="image/jpeg,image/png,image/webp"
         className={styles.hiddenInput}
         onChange={onChange}
       />
