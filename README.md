@@ -1,9 +1,18 @@
-# 올려도 될까
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/re-ad-logo-dark.png">
+    <img src="./docs/assets/re-ad-logo.png" alt="Re:Ad" width="360">
+  </picture>
+</p>
 
-> AI로 만든 메뉴 홍보물을 **우리 가게 실물과 대조해** 과장과 오류를 찾아주는 검수 서비스
-> Uni-DTHON 2026 · Team 15
+<p align="center">
+  <b>직접 찍은 실제 메뉴 사진과 AI 메뉴 사진을 대조해, 올리기 전에 다른 곳을 찾아 주는 검수 서비스</b><br>
+  Uni-DTHON 2026 · Team 15
+</p>
 
-사장님이 AI로 만든 메뉴 이미지와 인스타 문구를 실제 메뉴 정보·실물 사진과 비교해 항목별 🟢🟡🔴 신호와 **근거 법령 조항**을 보여주고, 고쳐서 다시 만들 수 있는 재생성 프롬프트와 캡션 수정안을 함께 돌려줍니다.
+> **Re:Ad** — 로고의 ":"는 신호등이에요. 🔴 고쳐 주세요 · 🟢 올려도 됩니다.
+
+사장님이 AI로 만든 메뉴 이미지와 홍보 문구를 **실제 음식 사진**과 비교해 🟢 올려도 됨 · 🔴 고쳐 주세요 결과와 🔴 항목별 **사유·근거 법령 조항**을 보여주고, 고쳐서 다시 만들 수 있는 개선 프롬프트와 문구 수정안을 함께 돌려줍니다.
 
 > [!IMPORTANT]
 > **⚖️ 판정 기준은 법령에 근거합니다.** 모든 규칙에는 근거 조항과 시행일이 붙고, 판정은 AI가 아니라 코드(RuleEngine)가 합니다.
@@ -23,16 +32,29 @@
 |---|---|
 | 백엔드 | Java 21, Spring Boot 3.x, Spring Data JPA, Spring AI |
 | DB·스토리지 | Supabase (PostgreSQL, Storage) — Seoul 리전 |
-| AI | 멀티모달 비전 모델 (미정: OpenAI / Gemini / Claude) |
+| AI | OpenAI 멀티모달 (Spring AI) |
 | 프론트엔드 | Next.js 16 (App Router) · TypeScript · Tailwind CSS · shadcn/ui · TanStack Query |
-| 배포 | Docker → Render 또는 AWS EC2 |
+| 배포 | Render — 백엔드 Docker, 프론트 Node (둘 다 무료 플랜, Singapore) |
 
-## 레포 구조 (예정)
+## 배포
+
+| 대상 | 주소 | 방식 |
+|---|---|---|
+| 프론트 | https://ollyeodo-frontend.onrender.com | Render Web Service (Node) · Root `frontend` · `npm ci && npm run build` → `npm start` |
+| 백엔드 | https://ollyeodo-backend.onrender.com | Render Web Service (Docker) · Root `ollyeodo-backend` · `Dockerfile` · 헬스 체크 `/api/health` |
+
+- **`develop`에 머지되면 둘 다 자동으로 다시 배포**돼요 (해커톤 동안 배포 브랜치 = `develop`, 제출 전 `main`으로 변경).
+- 무료 플랜은 15분 정도 접속이 없으면 잠들어 **첫 접속이 50초~1분** 걸려요 → 데모·녹화 전에 두 주소를 한 번씩 열어 두기.
+- 비밀 값(Supabase·OpenAI)은 **Render 대시보드 Environment에만** 있어요. 레포·이미지에는 없음.
+- 프론트 환경변수 `NEXT_PUBLIC_API_BASE_URL`·`NEXT_PUBLIC_USE_MOCK`은 빌드 때 들어가서, 바꾸면 **Save, rebuild, and deploy** 필요.
+- 백엔드 CORS 허용 주소는 `APP_CORS_ALLOWED_ORIGINS` (프론트 주소 + `http://localhost:3000`).
+
+## 레포 구조
 
 ```text
 .
 ├─ ollyeodo-backend/   Spring Boot API (com.team.ollyeodo)
-├─ frontend/           화면 3개 (메뉴 등록 · 검수 요청 · 검수 결과)
+├─ frontend/           홈 + 화면 2개 (검수 요청 · 검수 결과)
 ├─ docs/               팀 규칙 등 보조 문서
 ├─ OLLYEODO_MVP.md
 └─ .env.example
@@ -102,11 +124,16 @@ cd ollyeodo-backend
 
 ### 추출 자기일관성 비교
 
-이미지 추출에는 메뉴 재료명 목록을 함께 전달합니다. 메뉴 재료별 개수는 정확한 재료명으로
-각각 비교하고 위치 설명·접시·장식 설명은 일치 여부에 사용하지 않습니다.
+추출 순서는 **실물 먼저(A안, MVP §7.1)** 입니다. `extractImages(ai, real)`는
+1) 실물 사진을 2회 병렬로 자유 추출하고, 2) 두 결과의 재료명 합집합으로 목록을 만든 뒤,
+3) 그 목록을 넘겨 AI 이미지를 2회 병렬 추출합니다. 두 사진이 같은 재료명을 쓰게 해서
+`IMG_EXTRA_ITEM` "없는 재료" 오판을 막습니다. 실물에서 재료가 하나도 나오지 않으면
+`ExtractionException`("실물 사진을 다시 찍어 주세요")을 던지고 AI 이미지는 호출하지 않습니다.
+메뉴 설명(캡션)은 `extractCaption`으로 따로 추출합니다.
+
+위치 설명·접시·장식 설명은 일치 여부에 사용하지 않습니다.
 `agreement.items`는 재료별 두 개수와 일치 여부를 담습니다. null·누락·중복 응답은 해당 재료만
-확인 불가로 처리하며, 메뉴 외 재료는 각 회차의 `extraItemCandidates`로 분리합니다.
-후속 IMG_EXTRA_ITEM 판정에서는 AI·실물 양쪽의 두 원본 후보를 확인해야 합니다.
+확인 불가로 처리합니다. 추가 재료 판정은 `ComparisonService`가 실물·AI 추출값을 비교해 수행합니다.
 
 `plate`, `garnish`는 원본의 참고값으로 유지합니다. `layers`, `people`, `visible_text`는 계속 비교합니다.
 MVP §6의 1.2/1.5배는 AI·실물 간 판정 임계값이며 추출 오차 허용값이 아닙니다.
@@ -115,4 +142,4 @@ MVP §6의 1.2/1.5배는 AI·실물 간 판정 임계값이며 추출 오차 허
 허용 오차가 결정된 경우 절대 차이가 허용값 이하인지 비교하도록 구현했습니다.
 제안값은 0.05(5%p)이나 승인 전까지 적용하지 않습니다. §6 판정 임계값과 심각도는 변경하지 않습니다.
 
-live 테스트의 재료명 목록은 데모 입력 `딸기`, `휘핑크림`이며 실제 메뉴 등록값을 대신하지 않습니다.
+live 테스트는 동일 사진을 실물·AI 양쪽으로 넣어 A안 순서(실물 2회 → AI 2회)로 추출합니다.

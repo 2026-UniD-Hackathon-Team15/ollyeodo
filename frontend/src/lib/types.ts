@@ -9,7 +9,6 @@ export type RuleCode =
   | "IMG_EXTRA_ITEM"
   | "IMG_COUNT"
   | "IMG_FILL"
-  | "IMG_LAYER"
   | "CAP_FACT"
   | "CAP_ORIGIN"
   | "CAP_DISEASE"
@@ -28,6 +27,11 @@ export interface Finding {
   realValue?: string;
   evidence?: string;
   lawRef?: string;
+  /**
+   * 🟢 이지만 올리기 전에 사장님이 직접 한 번 봐야 할 항목 (피그마 「통과지만 한 번 확인해 보세요」).
+   * 판정(severity)은 바꾸지 않는 표시용 값이다. 기준은 팀 합의 후 §6에 추가 (이슈 #4·#8·#9·#11).
+   */
+  checkOnce?: boolean;
 }
 
 /** POST /api/checks, GET /api/checks/{id} 응답 (§9.1) */
@@ -38,24 +42,12 @@ export interface CheckResult {
   overall: Severity;
   findings: Finding[];
   captionFix: string;
-  regenPrompt: { ko: string; en: string };
-}
-
-/**
- * 메뉴 정보 (§8 Menu.facts). 재료·개수·원산지는 사장님이 입력하지 않는다 —
- * 매장에서 찍은 실제 메뉴 사진이 비교 기준이다 (피그마 「01 검수하기」).
- */
-export interface MenuFacts {
-  name: string;
-}
-
-/** POST /api/menus, GET /api/menus 응답 */
-export interface Menu {
-  id: number;
-  name: string;
-  facts: MenuFacts;
+  /** 🟢면 백엔드가 null 을 준다 (docs/check-api.md) */
+  regenPrompt: { ko: string; en: string } | null;
+  /** 검수한 메뉴 이름 (POST 요청의 menuName 을 백엔드가 저장해 응답에 돌려준다) */
+  menuName?: string;
+  aiImageUrl?: string;
   realImageUrl?: string;
-  createdAt?: string;
 }
 
 /** GET /api/rules 응답 (§8 Rule) */
@@ -91,14 +83,10 @@ export interface RecentCheck {
 
 /** POST /api/checks 입력 — multipart menuName · realImage · aiImage · caption · asOf (§9, docs/check-api.md) */
 export interface CreateCheckInput {
-  menuId: number;
+  menuName: string;
+  realImage: File;
   aiImage: File;
   caption: string;
   /** 생략하면 서버가 오늘(Asia/Seoul)로 처리 */
   asOf?: string;
-}
-
-export interface CreateMenuInput {
-  facts: MenuFacts;
-  realImage: File;
 }

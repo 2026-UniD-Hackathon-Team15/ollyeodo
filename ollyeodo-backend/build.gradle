@@ -29,11 +29,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    // 로그인 (#71): Supabase Auth가 준 JWT만 검증한다. 비밀번호는 다루지 않는다
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     runtimeOnly 'com.h2database:h2'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
@@ -52,4 +55,9 @@ tasks.register('liveExtractionTest', Test) {
     useJUnitPlatform { includeTags 'live' }
     outputs.upToDateWhen { false }
     testLogging.showStandardStreams = true
+}
+
+// 배포 이미지에는 실행 jar 하나만 필요하다 (Dockerfile의 COPY build/libs/*.jar)
+tasks.named("jar") {
+    enabled = false
 }

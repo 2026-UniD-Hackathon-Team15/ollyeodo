@@ -19,7 +19,7 @@ class OpenAiExtractionClientTest {
         assertTrue(properties.has("fill_ratio"));
         assertTrue(properties.has("visible_text"));
         assertFalse(properties.has("fillRatio"));
-        assertEquals(7, schema.path("required").size());
+        assertEquals(10, schema.path("required").size());
         assertFalse(schema.path("additionalProperties").asBoolean());
         assertTrue(properties.path("layers").path("type").toString().contains("null"));
         var result = converter.convert("""

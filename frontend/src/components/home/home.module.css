@@ -23,6 +23,13 @@
   opacity: 1;
   transform: none;
 }
+/* 로고 등장 애니메이션은 나타나기(.in)가 붙는 순간부터 시작한다 */
+.rv:not(.in) :global(.logo-intro-signal),
+.rv:not(.in) :global(.logo-intro-re),
+.rv:not(.in) :global(.logo-intro-ad) {
+  animation: none;
+  opacity: 0;
+}
 .line {
   display: block;
   overflow: hidden;
@@ -239,18 +246,44 @@
   margin-top: 96px;
   padding: 0 24px;
   text-align: center;
-  font-size: 14px;
-  color: var(--color-faint);
+}
+.trustLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-signal-green-ink);
 }
 .trustRow {
-  margin-top: 18px;
+  margin-top: 20px;
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 10px 36px;
-  font-size: 16px;
+  gap: 12px;
+}
+.lawCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 240px;
+  padding: 20px 28px;
+  border-radius: 20px;
+  background: var(--color-surface-subtle);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  text-align: left;
+}
+.lawCard b {
+  font-size: 22px;
   font-weight: 700;
-  color: #9ea6af;
+  letter-spacing: 0.01em;
+  color: var(--color-ink);
+}
+.lawCard span {
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: var(--color-sub);
 }
 
 /* ---------- ② 단계 (스크롤 고정) ---------- */
@@ -279,6 +312,7 @@
 .article {
   position: absolute;
   inset: 0;
+  padding-left: 36px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -295,9 +329,13 @@
   pointer-events: auto;
 }
 .bars {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
+  flex-direction: column;
   gap: 6px;
-  margin-bottom: 28px;
 }
 .bars i {
   width: 8px;
@@ -305,11 +343,11 @@
   border-radius: 4px;
   background: var(--off);
   transition:
-    width 0.5s var(--ease),
+    height 0.5s var(--ease),
     background 0.4s;
 }
 .bars i.barOn {
-  width: 28px;
+  height: 28px;
   background: var(--color-signal-green);
 }
 .num {
@@ -663,9 +701,29 @@
 }
 .stLine {
   display: block;
+  line-height: 1.25;
+}
+.stLine1 {
+  margin-top: 0.15em;
+}
+.stLine2 {
+  margin-top: 1.1em;
+  font-size: 0.62em;
+  line-height: 1.4;
+}
+.stLine3 {
+  margin-top: 0.3em;
+  font-size: 0.62em;
+  line-height: 1.4;
 }
 .w {
   transition: color 0.3s;
+}
+.hr {
+  font-size: 1.15em;
+}
+.hl {
+  font-size: 1.15em;
 }
 .wOn {
   color: #fff;
@@ -691,7 +749,8 @@
   color: var(--color-ink);
 }
 .lead {
-  max-width: 640px;
+  max-width: 720px;
+  text-wrap: balance;
   margin-top: 20px;
   font-size: 19px;
   line-height: 1.7;
@@ -969,9 +1028,6 @@
   .copy p {
     margin-top: 12px;
     font-size: 15px;
-  }
-  .bars {
-    margin-bottom: 16px;
   }
   .device {
     justify-self: center;

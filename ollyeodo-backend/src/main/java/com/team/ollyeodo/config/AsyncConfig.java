@@ -8,12 +8,12 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @Configuration
 @EnableAsync
 public class AsyncConfig {
-    /** 이미지 2장 × 2회 추출용. CompletableFuture.supplyAsync에 명시적으로 전달한다. */
+    /** 이미지 3회 추출 + 문구 분류 2회를 동시에. CompletableFuture.supplyAsync에 명시적으로 전달한다. */
     @Bean
     public ThreadPoolTaskExecutor extractionExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(4);
-        executor.setMaxPoolSize(8);
+        executor.setCorePoolSize(8);
+        executor.setMaxPoolSize(16);
         executor.setQueueCapacity(32);
         executor.setThreadNamePrefix("extraction-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
