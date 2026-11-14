@@ -34,7 +34,7 @@ class LiveExtractionTest {
         try (var context = new SpringApplicationBuilder(OllyeodoBackendApplication.class)
                 .properties("spring.main.web-application-type=none").run()) {
             var service = context.getBean(ExtractionService.class);
-            var images = service.extractImages(image, image, java.util.List.of("딸기", "휘핑크림"));
+            var images = service.extractImages(image, image);
             assertNotNull(images.ai().first());
             assertNotNull(images.ai().second());
             assertNotNull(images.real().first());
@@ -49,8 +49,7 @@ class LiveExtractionTest {
             Path report = Path.of("build/reports/ai-extraction-demo.json");
             Files.createDirectories(report.getParent());
             mapper.writerWithDefaultPrettyPrinter().writeValue(report.toFile(),
-                    java.util.Map.of("menuIngredients", java.util.List.of("딸기", "휘핑크림"),
-                            "fillRatioTolerance", "UNSET", "images", images, "caption", claims));
+                    java.util.Map.of("fillRatioTolerance", "UNSET", "images", images, "caption", claims));
             System.out.println("AI agreement: " + images.ai().agreement());
             System.out.println("Real agreement: " + images.real().agreement());
         }

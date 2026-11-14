@@ -5,7 +5,7 @@ import type {
   Menu,
   Rule,
 } from "@/lib/types";
-import { mockCheckResult, mockMenus, mockRules } from "./data";
+import { mockCheckById, mockCheckResult, mockMenus, mockRules } from "./data";
 
 /** 실제 네트워크처럼 보이도록 약간 지연 */
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -26,7 +26,7 @@ export const mockApi = {
   },
   async getCheck(id: number): Promise<CheckResult> {
     await delay(300);
-    return { ...mockCheckResult, checkId: id };
+    return mockCheckById(id);
   },
   async listRules(): Promise<Rule[]> {
     await delay(200);
