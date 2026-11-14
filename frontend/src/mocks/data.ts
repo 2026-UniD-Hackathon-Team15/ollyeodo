@@ -81,7 +81,7 @@ export const mockCheckResult: CheckResult = {
   captionFix: "딸기 3개를 올린 크레이프 케이크예요. (사진은 연출된 이미지입니다)",
   regenPrompt: {
     ko: "딸기 크레이프 케이크 1조각, 흰 원형 접시, 위에서 45도, 자연광.\n크레이프 사이 생크림과 딸기 조각, 윗면 딸기 3개. 실제 매장 사진과 같은 크기와 양.\n넣지 말 것: 블루베리, 딸기 4개 이상, 접시를 넘치는 크림, 글자.",
-    en: "One slice of strawberry crepe cake on a white round plate, 45-degree top view, natural light.\nWhipped cream and strawberry pieces between crepe layers, exactly 3 strawberries on top. Same size and amount as the real store photo.\nAvoid: blueberries, 4 or more strawberries, cream overflowing the plate, text.",
+    en: "One slice of strawberry crepe cake on a white round plate, 45-degree top view, natural light.\nWhipped cream and strawberry pieces inside, exactly 3 strawberries on top. Same size and amount as the real store photo.\nAvoid: blueberries, 4 or more strawberries, cream overflowing the plate, text.",
   },
 };
 
@@ -108,15 +108,6 @@ export const mockPassedCheckResult: CheckResult = {
       checkOnce: false,
     },
     {
-      ruleCode: "IMG_LAYER",
-      severity: "GREEN",
-      aiValue: "6겹",
-      realValue: "6겹",
-      evidence: "층 수 같음",
-      lawRef: FOOD_FAIR_FALSE,
-      checkOnce: false,
-    },
-    {
       ruleCode: "IMG_FILL",
       severity: "GREEN",
       aiValue: "접시 대비 0.6",
@@ -138,7 +129,6 @@ export const mockRules: Rule[] = [
   { code: "IMG_EXTRA_ITEM", title: "없는 재료", lawRef: FOOD_FAIR_FALSE, sourceUrl: LAW.food, effectiveFrom: "2025-09-19", severity: "RED" },
   { code: "IMG_COUNT", title: "개수", lawRef: FOOD_FAIR_FALSE, sourceUrl: LAW.food, effectiveFrom: "2025-09-19", severity: "RED" },
   { code: "IMG_FILL", title: "양, 크기", lawRef: FOOD_FAIR_FALSE, sourceUrl: LAW.food, effectiveFrom: "2025-09-19", severity: "RED" },
-  { code: "IMG_LAYER", title: "층 수, 구성", lawRef: FOOD_FAIR_FALSE, sourceUrl: LAW.food, effectiveFrom: "2025-09-19", severity: "RED" },
   { code: "CAP_FACT", title: "수치·재료 불일치 (실물 사진 추출값 기준)", lawRef: FOOD_FAIR_FALSE, sourceUrl: LAW.food, effectiveFrom: "2025-09-19", severity: "RED" },
   // 판정 아님 — 원산지 주장이 있으면 🟢 + 직접 확인 안내
   { code: "CAP_ORIGIN", title: "원산지 표기가 실제와 같은지 직접 확인해 주세요", lawRef: "원산지표시법 제5조, 제6조①②", sourceUrl: LAW.origin, effectiveFrom: "2026-10-22", severity: "GREEN" },

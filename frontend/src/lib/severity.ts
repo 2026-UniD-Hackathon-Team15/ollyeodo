@@ -33,7 +33,6 @@ export const ruleTitle: Record<RuleCode, string> = {
   IMG_EXTRA_ITEM: "실물에 없는 재료",
   IMG_COUNT: "재료 개수",
   IMG_FILL: "양·크기",
-  IMG_LAYER: "층 수·구성",
   CAP_FACT: "수치·재료가 다른 설명",
   CAP_ORIGIN: "원산지 표현",
   CAP_DISEASE: "질병 예방·치료로 오해할 표현",
@@ -54,6 +53,13 @@ export const checkedTitle: Partial<Record<RuleCode, string>> = {
   CAP_MEDICINE: "의약품·건강 표현",
   CAP_HFOOD: "의약품·건강 표현",
 };
+
+/**
+ * 화면에 보여 주지 않는 규칙 — 층 수(IMG_LAYER)는 서비스에서 뺐다 (#62).
+ * 백엔드가 아직 보내더라도 결과 카드·「확인했어요」·판정 기준표 어디에도 띄우지 않는다.
+ */
+const HIDDEN_RULES: ReadonlySet<string> = new Set(["IMG_LAYER"]);
+export const isShownRule = (code: string) => !HIDDEN_RULES.has(code);
 
 /** 이미지 비교 규칙인지 (카드 부제를 "AI 사진 … → 실제 …"로 쓸지 정할 때) */
 export const isImageRule = (code: RuleCode) => code.startsWith("IMG_");
