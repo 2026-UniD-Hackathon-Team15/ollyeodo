@@ -1,4 +1,4 @@
-# 올려도 될까 — 프론트엔드
+# Re:Ad — 프론트엔드
 
 Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui · TanStack Query
 
