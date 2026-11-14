@@ -34,6 +34,10 @@ public class Check {
     /** AI 이미지 경로 (Storage) */
     private String aiImagePath;
 
+    /** 검수 요청 시 입력한 메뉴 이름 */
+    @Column(columnDefinition = "text")
+    private String menuName;
+
     /** 메뉴 설명(홍보 문구) */
     @Column(columnDefinition = "text")
     private String caption;

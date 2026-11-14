@@ -6,9 +6,15 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice(assignableTypes = CheckController.class)
 public class CheckExceptionHandler {
+    @ExceptionHandler(ResponseStatusException.class)
+    public ProblemDetail requestFailed(ResponseStatusException exception) {
+        return ProblemDetail.forStatusAndDetail(exception.getStatusCode(), exception.getReason());
+    }
+
     @ExceptionHandler(ExtractionException.class)
     public ProblemDetail extractionFailed(ExtractionException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY,
