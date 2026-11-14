@@ -1,3 +1,5 @@
+<!-- base 브랜치: develop (develop → main 통합 PR만 예외) -->
+
 ## 관련 이슈
 Closes #
 
@@ -5,6 +7,7 @@ Closes #
 -
 
 ## 체크리스트
+- [ ] base 브랜치가 `develop`이다
 - [ ] 선행 이슈가 모두 머지된 상태에서 작업했다
 - [ ] 비밀 키·`.env`가 포함되지 않았다
 - [ ] (⚖️ legal) 임계값·심각도·근거 조항이 `OLLYEODO_MVP.md` §6과 일치한다
