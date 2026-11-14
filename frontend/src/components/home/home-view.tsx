@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, ChevronRight } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Scale } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/logo";
@@ -50,6 +50,11 @@ const stats = [
   { to: 11, unit: "개", text: "법령에 근거한 판정 규칙 (안내 2개 별도)" },
   { to: 2, unit: "개", text: "근거 법률 — 식품표시광고법, 표시광고법" },
   { to: 2, unit: "번", text: "사진마다 두 번씩 읽어서 결과를 맞춰 봐요." },
+];
+
+const laws = [
+  { name: "식품표시광고법", desc: "식품 표시·광고 기준" },
+  { name: "표시광고법", desc: "부당한 표시·광고 기준" },
 ];
 
 const chips = [
@@ -158,7 +163,7 @@ export function HomeView() {
       {/* ① 첫 화면 */}
       <section className={s.hero} data-hero>
         <div className={s.rv}>
-          <Logo animated display className={s.bigLogo} />
+          <Logo animated intro display className={s.bigLogo} />
         </div>
         <h1 className={s.rv} style={{ "--d": ".1s" } as React.CSSProperties}>
           <span className={s.line}>
@@ -223,10 +228,17 @@ export function HomeView() {
       </section>
 
       <div className={cn(s.trust, s.rv)}>
-        근거로 삼는 법률
+        <div className={s.trustLabel}>
+          <Scale className="size-[18px]" strokeWidth={2.2} />
+          근거로 삼는 법률
+        </div>
         <div className={s.trustRow}>
-          <span>식품표시광고법</span>
-          <span>표시광고법</span>
+          {laws.map((law) => (
+            <div key={law.name} className={s.lawCard}>
+              <b>{law.name}</b>
+              <span>{law.desc}</span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -234,13 +246,13 @@ export function HomeView() {
       <section ref={stepsRef} id="how" className={s.steps}>
         <div className={s.stepsPin}>
           <div className={s.copy}>
+            <div className={s.bars} aria-hidden>
+              {steps.map((_, k) => (
+                <i key={k} className={cn(k === step && s.barOn)} />
+              ))}
+            </div>
             {steps.map((st, i) => (
               <article key={i} className={cn(s.article, i === step && s.on)} aria-hidden={i !== step}>
-                <div className={s.bars}>
-                  {steps.map((_, k) => (
-                    <i key={k} className={cn(k === i && s.barOn)} />
-                  ))}
-                </div>
                 <div className={s.num}>{String(i + 1).padStart(2, "0")}</div>
                 <h2>
                   {st.title[0]}
@@ -268,7 +280,7 @@ export function HomeView() {
       <section className={s.statement}>
         <p ref={statementRef}>
           {statementWords.map((line, li) => (
-            <span key={li} className={s.stLine}>
+            <span key={li} className={cn(s.stLine, s[`stLine${li}`])}>
               {line.map(({ word, tone }, wi) => {
                 const on = wordIndex++ < lit;
                 return (
@@ -291,7 +303,9 @@ export function HomeView() {
           정해진 기준표가 합니다
         </h2>
         <p className={cn(s.lead, s.rv)} style={{ "--d": ".1s" } as React.CSSProperties}>
-          AI는 사진과 문구에서 사실만 뽑아요. 신호등 색은 법령에 근거한 기준표대로 코드가 정합니다.
+          AI는 사진과 문구에서 사실만 뽑아요.
+          <br />
+          신호등 색은 법령에 근거한 기준표대로 코드가 정합니다.
         </p>
         <div className={s.grid3}>
           {stats.map((st, i) => (
