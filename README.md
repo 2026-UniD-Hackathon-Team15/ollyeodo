@@ -110,9 +110,9 @@ cd ollyeodo-backend
 
 `plate`, `garnish`는 원본의 참고값으로 유지합니다. `layers`, `people`, `visible_text`는 계속 비교합니다.
 MVP §6의 1.2/1.5배는 AI·실물 간 판정 임계값이며 추출 오차 허용값이 아닙니다.
-추출의 `fill_ratio` 허용 오차 상수 `ImageExtractionResult.FILL_RATIO_TOLERANCE`는 미설정입니다.
-동일 수치는 MATCH, 서로 다른 수치는 TOLERANCE_UNSET, 확인 불가 값은 UNKNOWN으로 반환합니다.
-허용 오차가 결정된 경우 절대 차이가 허용값 이하인지 비교하도록 구현했습니다.
-제안값은 0.05(5%p)이나 승인 전까지 적용하지 않습니다. §6 판정 임계값과 심각도는 변경하지 않습니다.
+같은 사진 2회 추출의 `fill_ratio` 허용 오차 `ImageExtractionResult.FILL_RATIO_TOLERANCE`는
+**0.05(5%p)** 입니다 (PM 확정, MVP §6.3). 절대 차이가 0.05 이하면 MATCH, 넘으면 MISMATCH,
+확인 불가 값은 UNKNOWN으로 반환합니다. MISMATCH는 RuleEngine(#9)에서 🔴 대신 🟡 "직접 확인 필요"로 내립니다.
+§6 판정 임계값과 심각도는 변경하지 않습니다.
 
 live 테스트의 재료명 목록은 데모 입력 `딸기`, `휘핑크림`이며 실제 메뉴 등록값을 대신하지 않습니다.

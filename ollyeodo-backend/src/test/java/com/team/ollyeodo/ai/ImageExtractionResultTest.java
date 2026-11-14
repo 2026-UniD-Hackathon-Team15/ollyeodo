@@ -68,11 +68,21 @@ class ImageExtractionResultTest {
     }
 
     @Test
-    void unsetToleranceDoesNotInventThreshold() {
-        assertTrue(ImageExtractionResult.FILL_RATIO_TOLERANCE.isEmpty());
-        var a = attrs(List.of(), 0.4);
-        assertEquals(TOLERANCE_UNSET, ImageExtractionResult.compare(a, attrs(List.of(), 0.42), MENU).agreement().fillRatio());
+    void confirmedFillToleranceIsFivePercentPoints() {
+        // PM 확정값 (MVP §6.3): 절대 차이 0.05 이하면 일치
+        assertEquals(0.05, ImageExtractionResult.FILL_RATIO_TOLERANCE.getAsDouble());
+        var a = attrs(List.of(), 0.45);
         assertEquals(MATCH, ImageExtractionResult.compare(a, a, MENU).agreement().fillRatio());
+        assertEquals(MATCH, ImageExtractionResult.compare(a, attrs(List.of(), 0.5), MENU).agreement().fillRatio());
+        assertEquals(MATCH, ImageExtractionResult.compare(attrs(List.of(), 0.5), a, MENU).agreement().fillRatio());
+        assertEquals(MISMATCH, ImageExtractionResult.compare(a, attrs(List.of(), 0.51), MENU).agreement().fillRatio());
+    }
+
+    @Test
+    void emptyToleranceStillReportsUnset() {
+        var a = attrs(List.of(), 0.4);
+        assertEquals(TOLERANCE_UNSET, ImageExtractionResult.compare(a, attrs(List.of(), 0.42), MENU, OptionalDouble.empty())
+                .agreement().fillRatio());
     }
 
     @Test

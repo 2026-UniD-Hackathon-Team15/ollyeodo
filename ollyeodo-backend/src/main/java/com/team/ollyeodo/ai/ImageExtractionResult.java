@@ -12,8 +12,11 @@ import java.util.OptionalDouble;
 /** 원본의 plate/garnish는 참고값으로만 보존하며 자기일관성 판정에는 사용하지 않는다. */
 public record ImageExtractionResult(ExtractedAttrs first, ExtractedAttrs second,
                                     Agreement agreement, ExtraItemCandidates extraItemCandidates) {
-    /** MVP에 추출 오차 기준이 없다. 승인 전까지 값이 다른 fill_ratio는 확정 비교하지 않는다. */
-    public static final OptionalDouble FILL_RATIO_TOLERANCE = OptionalDouble.empty();
+    /**
+     * 같은 사진 2회 추출의 fill_ratio 일치 허용 오차 (절대 차이 0.05 = 5%p 이하면 일치).
+     * PM 확정 2026-11-14, OLLYEODO_MVP.md §6.3. §6.1의 1.2/1.5배 판정 임계값과는 별개다.
+     */
+    public static final OptionalDouble FILL_RATIO_TOLERANCE = OptionalDouble.of(0.05);
 
     public enum FillAgreement { MATCH, MISMATCH, TOLERANCE_UNSET, UNKNOWN }
     public record ItemAgreement(Integer firstCount, Integer secondCount, boolean matches) {}
