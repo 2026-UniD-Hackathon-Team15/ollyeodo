@@ -1,0 +1,28 @@
+# env
+.env
+.env.*
+!.env.example
+
+# Java / Gradle / Maven
+backend/build/
+backend/.gradle/
+backend/target/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Node
+node_modules/
+frontend/dist/
+frontend/build/
+frontend/.next/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# local uploads
+uploads/
