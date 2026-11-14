@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api/client";
 import { useCreateCheck } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 import { AnalyzingView } from "./analyzing-view";
@@ -75,6 +76,8 @@ export function NewCheckForm() {
   const realInputRef = useRef<HTMLInputElement>(null);
   const aiInputRef = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
+  /** 이 화면이 지금 보이는지 — 결과를 기다리는 동안 떠나면 false */
+  const activeRef = useRef(false);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -103,7 +106,9 @@ export function NewCheckForm() {
    * (가려질 때 위 정리 코드가 사진 미리보기 주소도 해제하므로 사진도 함께 비운다)
    */
   useEffect(() => {
+    activeRef.current = true;
     return () => {
+      activeRef.current = false;
       setLoading(false);
       setMenuName("");
       setRealFile(null);
@@ -215,9 +220,11 @@ export function NewCheckForm() {
         caption: caption.trim(),
         asOf: asOfFromUrl(),
       });
-      router.push(`/checks/${result.checkId}`);
-    } catch {
-      toast.error("검수하지 못했어요. 잠시 뒤 다시 시도해 주세요");
+      // 기다리는 동안 다른 화면으로 떠났으면 결과 화면으로 끌고 가지 않는다
+      if (activeRef.current) router.push(`/checks/${result.checkId}`);
+    } catch (error) {
+      if (!activeRef.current) return;
+      toast.error(error instanceof ApiError ? error.message : "검수하지 못했어요. 잠시 뒤 다시 시도해 주세요");
       setLoading(false);
     }
   }
