@@ -9,7 +9,6 @@ export type RuleCode =
   | "IMG_EXTRA_ITEM"
   | "IMG_COUNT"
   | "IMG_FILL"
-  | "IMG_LAYER"
   | "CAP_FACT"
   | "CAP_ORIGIN"
   | "CAP_DISEASE"

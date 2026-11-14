@@ -70,6 +70,13 @@
 .hiddenInput {
   display: none;
 }
+/* 칸 아래 안내 (피그마 「각도 안내」 — 13px 회색, 위 8px) */
+.hint {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--muted);
+}
 
 .changeBtn {
   border: 0;

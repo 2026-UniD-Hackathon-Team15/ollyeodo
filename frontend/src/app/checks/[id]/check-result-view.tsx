@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { TrafficLight } from "@/components/traffic-light";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useCheck, useRules } from "@/lib/api/queries";
-import { checkedTitle, isImageRule, ruleTitle } from "@/lib/severity";
+import { checkedTitle, isImageRule, isShownRule, ruleTitle } from "@/lib/severity";
 import type { CheckResult, Finding, Rule, RuleCode } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CheckResultSkeleton } from "./check-result-skeleton";
@@ -385,7 +385,7 @@ function Findings({
   const rules = [...rulesByCode.values()];
 
   // 🟢 중 직접 한 번 봐야 할 항목은 따로, 나머지는 판정에 영향 없는 안내.
-  // 사진 비교 🟢(「층 수 같음」 등)는 고칠 곳 화면에 늘어놓지 않고, 한 번만 차이가 보인 것만 알려 준다
+  // 사진 비교 🟢(실물과 같다는 안내)는 고칠 곳 화면에 늘어놓지 않고, 한 번만 차이가 보인 것만 알려 준다
   const greens = data.findings.filter((f) => f.severity === "GREEN");
   const checkOnce = greens.filter((f) => f.checkOnce);
   const notes = greens.filter(
@@ -624,26 +624,30 @@ export function CheckResultView() {
     );
   }
 
-  const rulesByCode = new Map((rules ?? []).map((r) => [r.code, r]));
-  const reds = data.findings.filter((f) => f.severity === "RED");
+  // 층 수(IMG_LAYER)처럼 서비스에서 뺀 규칙은 결과·규칙 목록에서 모두 걸러 낸다 (#62)
+  const result: CheckResult = { ...data, findings: data.findings.filter((f) => isShownRule(f.ruleCode)) };
+  const rulesByCode = new Map(
+    (rules ?? []).filter((r) => isShownRule(r.code)).map((r) => [r.code, r]),
+  );
+  const reds = result.findings.filter((f) => f.severity === "RED");
   // 종합 신호는 백엔드 값(overall)을 그대로 쓴다 — 화면에서 다시 판정하지 않는다
   const passed = data.overall === "GREEN";
 
   return (
     <div className="flex flex-col">
-      <Verdict data={data} redCount={reds.length} />
+      <Verdict data={result} redCount={reds.length} />
       {passed ? (
         <>
-          <Checked findings={data.findings} rulesByCode={rulesByCode} asOf={data.asOf} />
+          <Checked findings={result.findings} rulesByCode={rulesByCode} asOf={result.asOf} />
           <Band />
-          <PassedCaption data={data} />
+          <PassedCaption data={result} />
         </>
       ) : (
         <>
           <Band />
-          <Findings data={data} reds={reds} rulesByCode={rulesByCode} />
+          <Findings data={result} reds={reds} rulesByCode={rulesByCode} />
           <Band />
-          <Fix data={data} />
+          <Fix data={result} />
         </>
       )}
     </div>
