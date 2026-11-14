@@ -1,4 +1,4 @@
-import type { CheckResult, Menu, Rule } from "@/lib/types";
+import type { CheckResult, CheckStats, Menu, Rule } from "@/lib/types";
 
 /** OLLYEODO_MVP.md §9.1 응답 예시 그대로 */
 export const mockCheckResult: CheckResult = {
@@ -64,3 +64,49 @@ export const mockRules: Rule[] = [
     preEffectiveSeverity: "YELLOW",
   },
 ];
+
+/** 피그마 「04 검수 기록」(68:153) 수치 — 전체 12 · 올려도 됨 7 · 고쳐야 함 5 */
+export const mockStats: CheckStats = {
+  totalChecks: 12,
+  greenChecks: 7,
+  redChecks: 5,
+  ruleCounts: [
+    { ruleCode: "IMG_COUNT", count: 7 },
+    { ruleCode: "IMG_EXTRA_ITEM", count: 5 },
+    { ruleCode: "CAP_FACT", count: 4 },
+    { ruleCode: "CAP_MEDICINE", count: 3 },
+    { ruleCode: "CAP_SUPERLATIVE", count: 2 },
+  ],
+  recentChecks: [
+    {
+      checkId: 14,
+      menuName: "딸기 크레이프 케이크",
+      checkedAt: "2026-11-14T21:12:00+09:00",
+      overall: "GREEN",
+      note: "다시 올려서 통과",
+      aiImageUrl: "/home/ai-menu-fixed.jpg",
+    },
+    {
+      checkId: 12,
+      menuName: "딸기 크레이프 케이크",
+      checkedAt: "2026-11-14T20:40:00+09:00",
+      overall: "RED",
+      note: "고칠 곳 4곳",
+      aiImageUrl: "/home/ai-menu.jpg",
+    },
+    {
+      checkId: 13,
+      menuName: "말차 티라미수",
+      checkedAt: "2026-11-13T12:00:00+09:00",
+      overall: "GREEN",
+      note: "고칠 곳 없음",
+    },
+    {
+      checkId: 11,
+      menuName: "바질 크림 파스타",
+      checkedAt: "2026-11-12T12:00:00+09:00",
+      overall: "RED",
+      note: "고칠 곳 2곳",
+    },
+  ],
+};

@@ -5,6 +5,7 @@ import type {
   CreateCheckInput,
   CreateMenuInput,
   Menu,
+  CheckStats,
   Rule,
 } from "@/lib/types";
 
@@ -52,6 +53,8 @@ const realApi = {
   getCheck: (id: number) => request<CheckResult>(`/api/checks/${id}`),
 
   listRules: () => request<Rule[]>("/api/rules"),
+
+  getStats: () => request<CheckStats>("/api/checks/stats"),
 };
 
 /** NEXT_PUBLIC_USE_MOCK 으로 실제 API ↔ 목업 전환 */

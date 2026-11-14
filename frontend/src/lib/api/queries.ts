@@ -7,6 +7,7 @@ export const queryKeys = {
   menus: ["menus"] as const,
   check: (id: number) => ["checks", id] as const,
   rules: ["rules"] as const,
+  stats: ["checks", "stats"] as const,
 };
 
 export function useMenus() {
@@ -31,6 +32,10 @@ export function useCreateMenu() {
     mutationFn: api.createMenu,
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.menus }),
   });
+}
+
+export function useCheckStats() {
+  return useQuery({ queryKey: queryKeys.stats, queryFn: api.getStats });
 }
 
 export function useCreateCheck() {

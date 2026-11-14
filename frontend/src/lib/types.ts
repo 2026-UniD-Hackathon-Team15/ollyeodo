@@ -70,6 +70,26 @@ export interface Rule {
   preEffectiveSeverity?: Severity | null;
 }
 
+/** GET /api/checks/stats 응답 — 검수 기록 화면 (이슈 #21, 백엔드 #20 대기 중이라 경로는 임시) */
+export interface CheckStats {
+  totalChecks: number;
+  redChecks: number;
+  greenChecks: number;
+  ruleCounts: { ruleCode: RuleCode; count: number }[];
+  recentChecks: RecentCheck[];
+}
+
+export interface RecentCheck {
+  checkId: number;
+  menuName: string;
+  /** ISO 8601 (Asia/Seoul 시각) */
+  checkedAt: string;
+  overall: Severity;
+  note: string;
+  aiImageUrl?: string;
+}
+
+/** POST /api/checks 입력 — multipart menuName · realImage · aiImage · caption · asOf (§9, docs/check-api.md) */
 export interface CreateCheckInput {
   menuId: number;
   aiImage: File;
