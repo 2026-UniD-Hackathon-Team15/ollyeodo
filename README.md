@@ -40,11 +40,41 @@
 
 ## 로컬 실행
 
-> 백엔드·프론트 초기 세팅 이슈(#1, #2)가 머지되면 여기에 실행 방법을 채웁니다.
+Java 21을 설치한 뒤 저장소 루트에서 실행합니다. 로컬 DB는 H2이며,
+현재 초기 설정과 헬스 API 실행에는 외부 DB나 AI API 키가 필요하지 않습니다.
+
+```bash
+cd ollyeodo-backend
+./gradlew bootRun
+```
+
+다른 터미널에서 확인합니다. 기본 포트는 8080입니다.
+
+```bash
+curl -i http://localhost:8080/api/health
+```
+
+정상 응답: HTTP 200, `{"status":"UP"}`. 서버 종료는 `Ctrl+C`입니다.
+
+```bash
+# ollyeodo-backend/에서 테스트 및 전체 빌드
+./gradlew test
+./gradlew build
+```
+
+CORS는 기본적으로 `http://localhost:3000`, `http://localhost:5173`을 허용합니다.
+다른 프론트 주소는 `APP_CORS_ALLOWED_ORIGINS` 환경변수에 쉼표로 구분해 설정합니다.
+이미지 병렬 추출에는 `extractionExecutor` 빈을 `CompletableFuture.supplyAsync`에 전달합니다.
+
+Spring AI 1.1.8의 ChatClient 공통 의존성을 포함합니다.
+AI 제공자는 MVP §16에서 미정이므로 제공자 starter와 실제 호출 연결은 #7에서 추가합니다.
 
 ### 환경변수
 
-`.env.example`을 복사해 `.env`를 만들고 실제 값을 채웁니다. **`.env`는 커밋하지 않습니다.**
+Spring Boot는 `.env`를 자동으로 읽지 않습니다. 필요한 값은 IDE 실행 설정이나
+프로세스 환경변수로 전달하며, 비밀값을 코드나 설정 파일에 직접 적지 않습니다.
+
+Supabase·AI 연동 시 `.env.example`을 복사해 `.env`를 만들고 실제 값을 채웁니다. **`.env`는 커밋하지 않습니다.**
 
 ```bash
 cp .env.example .env
