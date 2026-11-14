@@ -49,7 +49,7 @@ const statementTotal = statementWords.reduce((n, line) => n + line.length, 0);
 const stats = [
   { to: 11, unit: "개", text: "법령에 근거한 판정 규칙 (안내 1개 별도)" },
   { to: 2, unit: "개", text: "근거 법률 — 식품표시광고법, 표시광고법" },
-  { to: 2, unit: "번", text: "사진마다 두 번씩 읽어요. 결과가 엇갈리면 직접 확인을 요청해요." },
+  { to: 2, unit: "번", text: "사진마다 두 번씩 읽어서 결과를 맞춰 봐요." },
 ];
 
 const chips = [

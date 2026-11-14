@@ -36,14 +36,6 @@ export const mockCheckResult: CheckResult = {
       evidence: "의약품으로 오해할 표현",
       lawRef: "식품표시광고법 제8조①2호",
     },
-    {
-      ruleCode: "IMG_FILL",
-      severity: "YELLOW",
-      aiValue: "접시 90%",
-      realValue: "접시 60%",
-      evidence: "1.5배 — 직접 확인해 주세요.",
-      lawRef: "식품표시광고법 제8조①4호 · 표시광고법 제3조①1호",
-    },
   ],
   captionFix: "딸기 3개를 올린 크레이프 케이크예요. (사진은 연출된 이미지입니다)",
   regenPrompt: {
