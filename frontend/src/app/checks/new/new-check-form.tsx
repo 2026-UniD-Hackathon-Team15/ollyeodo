@@ -4,10 +4,9 @@
 // 미리보기는 사용자가 고른 파일(blob URL)을 바로 보여줘야 해서 next/image 대신 img를 쓴다.
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useCreateCheck, useMenus } from "@/lib/api/queries";
+import { useCreateCheck, useCreateMenu } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 import styles from "./new-check.module.css";
 
@@ -32,27 +31,41 @@ function shake(el: HTMLElement | null) {
   setTimeout(() => el.classList.remove(styles.invalid), 1200);
 }
 
+function isValidImage(file: File) {
+  if (file.type !== "image/jpeg" && file.type !== "image/png") {
+    toast.error("JPG, PNG 사진만 올릴 수 있어요");
+    return false;
+  }
+  if (file.size > MAX_SIZE) {
+    toast.error("10MB 이하 사진만 올릴 수 있어요");
+    return false;
+  }
+  return true;
+}
+
 export function NewCheckForm() {
   const router = useRouter();
-  const menusQuery = useMenus();
+  const createMenu = useCreateMenu();
   const createCheck = useCreateCheck();
-  const loading = createCheck.isPending;
+  const [loading, setLoading] = useState(false);
 
-  const [menuId, setMenuId] = useState<number | null>(null);
+  const [menuName, setMenuName] = useState("");
+  const [realFile, setRealFile] = useState<File | null>(null);
+  const [realPreview, setRealPreview] = useState("");
   const [aiFile, setAiFile] = useState<File | null>(null);
   const [aiPreview, setAiPreview] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [caption, setCaption] = useState("");
 
-  const menuFieldRef = useRef<HTMLDivElement>(null);
+  const nameFieldRef = useRef<HTMLDivElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const realRowRef = useRef<HTMLDivElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const realInputRef = useRef<HTMLInputElement>(null);
   const aiInputRef = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
-
-  const menus = menusQuery.data ?? [];
-  const selectedMenu = menus.find((m) => m.id === (menuId ?? menus[0]?.id));
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -68,15 +81,23 @@ export function NewCheckForm() {
     };
   }, [aiPreview]);
 
+  useEffect(() => {
+    return () => {
+      if (realPreview) URL.revokeObjectURL(realPreview);
+    };
+  }, [realPreview]);
+
+  function onRealFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file && isValidImage(file)) {
+      setRealFile(file);
+      setRealPreview(URL.createObjectURL(file));
+    }
+    e.target.value = "";
+  }
+
   function setAiPhoto(file: File) {
-    if (file.type !== "image/jpeg" && file.type !== "image/png") {
-      toast.error("JPG, PNG 사진만 올릴 수 있어요");
-      return;
-    }
-    if (file.size > MAX_SIZE) {
-      toast.error("10MB 이하 사진만 올릴 수 있어요");
-      return;
-    }
+    if (!isValidImage(file)) return;
     setAiFile(file);
     setAiPreview(URL.createObjectURL(file));
   }
@@ -126,13 +147,20 @@ export function NewCheckForm() {
     if (file) setAiPhoto(file);
   }
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (loading) return;
 
-    if (!selectedMenu) {
-      shake(menuFieldRef.current);
-      toast.error("검수할 메뉴를 먼저 골라 주세요");
+    const name = menuName.trim();
+    if (name === "") {
+      shake(nameFieldRef.current);
+      nameInputRef.current?.focus();
+      toast.error("메뉴 이름을 적어 주세요");
+      return;
+    }
+    if (!realFile) {
+      shake(realRowRef.current);
+      toast.error("실제 메뉴 사진을 넣어 주세요");
       return;
     }
     if (!aiFile) {
@@ -148,13 +176,19 @@ export function NewCheckForm() {
       return;
     }
 
-    createCheck.mutate(
-      { menuId: selectedMenu.id, aiImage: aiFile, caption: caption.trim() },
-      {
-        onSuccess: (result) => router.push(`/checks/${result.checkId}`),
-        onError: () => toast.error("검수하지 못했어요. 잠시 뒤 다시 시도해 주세요"),
-      },
-    );
+    setLoading(true);
+    try {
+      const menu = await createMenu.mutateAsync({ facts: { name }, realImage: realFile });
+      const result = await createCheck.mutateAsync({
+        menuId: menu.id,
+        aiImage: aiFile,
+        caption: caption.trim(),
+      });
+      router.push(`/checks/${result.checkId}`);
+    } catch {
+      toast.error("검수하지 못했어요. 잠시 뒤 다시 시도해 주세요");
+      setLoading(false);
+    }
   }
 
   return (
@@ -169,52 +203,45 @@ export function NewCheckForm() {
           </p>
 
           <div className={cn(styles.group, styles.groupFirst, styles.reveal)} style={delay(2)}>
-            <label className={styles.label} htmlFor="menu">
-              메뉴 <small>메뉴 등록에서 실제 사진을 올린 메뉴</small>
+            <label className={styles.label} htmlFor="menuName">
+              메뉴 이름
             </label>
-            {menusQuery.isPending && <div className={styles.emptyMenus}>메뉴를 불러오는 중이에요</div>}
-            {menusQuery.isError && (
-              <div className={styles.emptyMenus}>메뉴를 불러오지 못했어요. 새로고침해 주세요.</div>
-            )}
-            {menusQuery.isSuccess && menus.length === 0 && (
-              <div className={styles.emptyMenus}>
-                등록된 메뉴가 없어요. <Link href="/menus/new">메뉴 등록하러 가기</Link>
-              </div>
-            )}
-            {menus.length > 0 && (
-              <div className={styles.field} ref={menuFieldRef}>
-                <select
-                  id="menu"
-                  value={selectedMenu?.id ?? ""}
-                  onChange={(e) => setMenuId(Number(e.target.value))}
-                >
-                  {menus.map((menu) => (
-                    <option key={menu.id} value={menu.id}>
-                      {menu.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div className={styles.field} ref={nameFieldRef}>
+              <input
+                id="menuName"
+                ref={nameInputRef}
+                type="text"
+                value={menuName}
+                placeholder="예: 딸기 크레이프 케이크"
+                onChange={(e) => setMenuName(e.target.value)}
+              />
+            </div>
           </div>
 
-          {selectedMenu && (
-            <div className={cn(styles.group, styles.reveal)} style={delay(3)}>
-              <div className={styles.label}>
-                실제 메뉴 사진 <small>메뉴 등록 때 올린 사진</small>
-              </div>
-              <div className={styles.photo}>
-                <div className={styles.thumb}>
-                  {selectedMenu.realImageUrl && (
-                    <img src={selectedMenu.realImageUrl} alt={`${selectedMenu.name} 실제 사진`} />
-                  )}
-                </div>
-                <div className={styles.meta}>
-                  <span className={styles.fileName}>{selectedMenu.name}</span>
-                </div>
-              </div>
+          <div className={cn(styles.group, styles.reveal)} style={delay(3)}>
+            <div className={styles.label}>
+              실제 메뉴 사진 <small>매장에서 직접 찍은 사진 1장</small>
             </div>
-          )}
+            <div className={styles.photo} ref={realRowRef}>
+              <div className={styles.thumb}>
+                {realPreview && <img src={realPreview} alt="실제 메뉴 사진" />}
+              </div>
+              <div className={styles.meta}>
+                <span className={styles.fileName}>{realFile ? realFile.name : "사진을 골라 주세요"}</span>
+                {realFile && <span className={styles.fileSize}>{formatSize(realFile.size)}</span>}
+              </div>
+              <button type="button" className={styles.changeBtn} onClick={() => realInputRef.current?.click()}>
+                {realFile ? "바꾸기" : "추가"}
+              </button>
+              <input
+                ref={realInputRef}
+                type="file"
+                accept="image/jpeg,image/png"
+                className={styles.hiddenInput}
+                onChange={onRealFileChange}
+              />
+            </div>
+          </div>
 
           <div className={cn(styles.group, styles.reveal)} style={delay(4)}>
             <div className={styles.label}>
@@ -328,6 +355,17 @@ export function NewCheckForm() {
           </button>
         </form>
       </div>
+
+      {loading && (
+        <div className={styles.loadingScreen} role="status" aria-live="polite">
+          <div className={styles.loadingDots} aria-hidden="true">
+            <i className={styles.dotStop} />
+            <i className={styles.dotGo} />
+          </div>
+          <p className={styles.loadingTitle}>실제 사진과 대조하는 중이에요</p>
+          <p className={styles.loadingSub}>사진과 설명을 꼼꼼히 비교하고 있어요. 잠시만 기다려 주세요.</p>
+        </div>
+      )}
     </div>
   );
 }

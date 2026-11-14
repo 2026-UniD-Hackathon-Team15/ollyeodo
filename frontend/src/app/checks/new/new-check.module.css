@@ -70,7 +70,17 @@
   display: none;
 }
 
-/* ---------- Menu select ---------- */
+.changeBtn {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 23px;
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+/* ---------- Menu name ---------- */
 .field {
   display: flex;
   align-items: center;
@@ -88,7 +98,7 @@
   background: #fff;
   box-shadow: inset 0 0 0 2px var(--green-bright);
 }
-.field select {
+.field input {
   flex: 1;
   min-width: 0;
   height: 100%;
@@ -98,15 +108,9 @@
   font-size: 17px;
   line-height: 24px;
   color: var(--ink);
-  cursor: pointer;
 }
-.emptyMenus {
-  padding: 16px 18px;
-  border-radius: 14px;
-  background: var(--field);
-  font-size: 15px;
-  line-height: 24px;
-  color: var(--body);
+.field input::placeholder {
+  color: var(--muted);
 }
 
 .invalid {
@@ -383,6 +387,64 @@
 }
 @keyframes fill {
   to { width: 100%; }
+}
+
+/* ---------- 분석 중 로딩 화면 ---------- */
+.loadingScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 24px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.96);
+  animation: fadeIn 0.3s var(--ease);
+}
+.loadingDots {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.loadingDots i {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+.dotStop {
+  background: var(--red);
+  animation: blinkStop 1s infinite;
+}
+.dotGo {
+  background: var(--green-bright);
+  animation: blinkGo 1s infinite;
+}
+.loadingTitle {
+  font-size: 22px;
+  line-height: 32px;
+  font-weight: 700;
+}
+.loadingSub {
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--body);
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes blinkStop {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+@keyframes blinkGo {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
 }
 
 /* ---------- 처음 나타날 때 ---------- */
