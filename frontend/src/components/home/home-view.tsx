@@ -26,7 +26,7 @@ const steps = [
   },
   {
     title: ["AI 메뉴 사진과 설명을 넣으면", "하나씩 비교해요"],
-    body: ["사진은 두 번씩 읽어 재료와 개수를 세고,", "메뉴 설명 속 표현을 법령 기준표와 맞춰 봐요."],
+    body: ["사진은 세 번씩 읽어 재료와 개수를 세고,", "메뉴 설명 속 표현을 법령 기준표와 맞춰 봐요."],
   },
   {
     title: ["다른 곳은", "근거 조항과 함께"],
@@ -49,7 +49,7 @@ const statementTotal = statementWords.reduce((n, line) => n + line.length, 0);
 const stats = [
   { to: 11, unit: "개", text: "법령에 근거한 판정 규칙 (안내 2개 별도)" },
   { to: 2, unit: "개", text: "근거 법률 — 식품표시광고법, 표시광고법" },
-  { to: 2, unit: "번", text: "사진마다 두 번씩 읽어서 결과를 맞춰 봐요." },
+  { to: 3, unit: "번", text: "사진마다 세 번씩 읽어서 결과를 맞춰 봐요." },
 ];
 
 const laws = [
@@ -210,7 +210,7 @@ export function HomeView() {
               딸기 크레이프 케이크
             </div>
             <div className={s.resultV}>
-              이대로 올리기 전에 <em>4곳</em>을 고쳐 주세요
+              이대로 올리기 전에 <em>3곳</em>을 고쳐 주세요
             </div>
             <div className={s.resultRows}>
               {findings.map((f, i) => (
@@ -350,7 +350,7 @@ export function HomeView() {
                 <TrafficLight state={fixed ? "GREEN" : "RED"} />
                 <div className={s.headline}>
                   <span className={s.hR}>
-                    <em>4곳</em>을 고쳐 주세요
+                    <em>3곳</em>을 고쳐 주세요
                   </span>
                   <span className={s.hG}>올려도 됩니다</span>
                 </div>
@@ -519,7 +519,7 @@ function ResultScreen({ on }: { on: boolean }) {
       <div className={s.verdict}>
         이대로 올리기 전에
         <br />
-        <em>4곳</em>을 고쳐 주세요
+        <em>3곳</em>을 고쳐 주세요
       </div>
       <div className={s.thumbs}>
         <div>
