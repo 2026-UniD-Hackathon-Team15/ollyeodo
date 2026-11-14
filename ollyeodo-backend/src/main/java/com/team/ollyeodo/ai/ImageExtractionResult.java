@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -11,7 +13,7 @@ import java.util.OptionalDouble;
 
 /** 원본의 plate/garnish는 참고값으로만 보존하며 자기일관성 판정에는 사용하지 않는다. */
 public record ImageExtractionResult(ExtractedAttrs first, ExtractedAttrs second,
-                                    Agreement agreement, ExtraItemCandidates extraItemCandidates) {
+                                    Agreement agreement) {
     /** MVP에 추출 오차 기준이 없다. 승인 전까지 값이 다른 fill_ratio는 확정 비교하지 않는다. */
     public static final OptionalDouble FILL_RATIO_TOLERANCE = OptionalDouble.empty();
 
@@ -19,18 +21,17 @@ public record ImageExtractionResult(ExtractedAttrs first, ExtractedAttrs second,
     public record ItemAgreement(Integer firstCount, Integer secondCount, boolean matches) {}
     public record Agreement(Map<String, ItemAgreement> items, boolean layers, FillAgreement fillRatio,
                             boolean people, boolean visibleText) {}
-    /** IMG_EXTRA_ITEM에서 두 추출 결과와 실물 결과를 확인할 후보. null 목록은 확인 불가다. */
-    public record ExtraItemCandidates(List<ExtractedAttrs.Item> first, List<ExtractedAttrs.Item> second) {}
-
-    public static ImageExtractionResult compare(ExtractedAttrs a, ExtractedAttrs b, List<String> ingredients) {
-        return compare(a, b, ingredients, FILL_RATIO_TOLERANCE);
+    public static ImageExtractionResult compare(ExtractedAttrs a, ExtractedAttrs b) {
+        return compare(a, b, FILL_RATIO_TOLERANCE);
     }
 
-    public static ImageExtractionResult compare(ExtractedAttrs a, ExtractedAttrs b, List<String> ingredients,
+    public static ImageExtractionResult compare(ExtractedAttrs a, ExtractedAttrs b,
                                                 OptionalDouble tolerance) {
         Objects.requireNonNull(a);
         Objects.requireNonNull(b);
-        List<String> names = ingredientNames(ingredients);
+        Set<String> names = new LinkedHashSet<>();
+        addNames(names, a.items());
+        addNames(names, b.items());
         Objects.requireNonNull(tolerance);
         if (tolerance.isPresent() && (!Double.isFinite(tolerance.getAsDouble())
                 || tolerance.getAsDouble() < 0 || tolerance.getAsDouble() > 1)) {
@@ -44,16 +45,13 @@ public record ImageExtractionResult(ExtractedAttrs first, ExtractedAttrs second,
         }
         return new ImageExtractionResult(a, b, new Agreement(Collections.unmodifiableMap(items),
                 same(a.layers(), b.layers()), compareFill(a.fillRatio(), b.fillRatio(), tolerance),
-                sameList(a.people(), b.people()), sameList(a.visibleText(), b.visibleText())),
-                new ExtraItemCandidates(extras(a.items(), names), extras(b.items(), names)));
+                sameList(a.people(), b.people()), sameList(a.visibleText(), b.visibleText())));
     }
 
-    static List<String> ingredientNames(List<String> ingredients) {
-        List<String> names = List.copyOf(ingredients);
-        if (names.stream().anyMatch(String::isBlank) || names.stream().distinct().count() != names.size()) {
-            throw new IllegalArgumentException("메뉴 재료명은 비어 있거나 중복될 수 없습니다.");
-        }
-        return names;
+    private static void addNames(Set<String> names, List<ExtractedAttrs.Item> items) {
+        if (items == null) return;
+        items.stream().filter(Objects::nonNull).map(ExtractedAttrs.Item::name)
+                .filter(Objects::nonNull).forEach(names::add);
     }
 
     private static Integer count(List<ExtractedAttrs.Item> items, String name) {
@@ -63,12 +61,6 @@ public record ImageExtractionResult(ExtractedAttrs first, ExtractedAttrs second,
         if (matches.size() != 1) return null;
         Integer count = matches.getFirst().count();
         return count != null && count >= 0 ? count : null;
-    }
-
-    private static List<ExtractedAttrs.Item> extras(List<ExtractedAttrs.Item> items, List<String> names) {
-        if (items == null) return null;
-        return items.stream().filter(Objects::nonNull)
-                .filter(i -> i.name() != null && !names.contains(i.name())).toList();
     }
 
     private static FillAgreement compareFill(Double a, Double b, OptionalDouble tolerance) {
