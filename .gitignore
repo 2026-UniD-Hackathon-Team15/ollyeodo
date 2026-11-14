@@ -4,9 +4,9 @@
 !.env.example
 
 # Java / Gradle / Maven
-backend/build/
-backend/.gradle/
-backend/target/
+ollyeodo-backend/build/
+ollyeodo-backend/.gradle/
+ollyeodo-backend/target/
 *.class
 *.jar
 !gradle/wrapper/gradle-wrapper.jar

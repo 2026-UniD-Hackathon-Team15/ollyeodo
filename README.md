@@ -31,9 +31,9 @@
 
 ```text
 .
-├─ backend/     Spring Boot API (com.team.ollyeodo)
-├─ frontend/    화면 3개 (메뉴 등록 · 검수 요청 · 검수 결과)
-├─ docs/        팀 규칙 등 보조 문서
+├─ ollyeodo-backend/   Spring Boot API (com.team.ollyeodo)
+├─ frontend/           화면 3개 (메뉴 등록 · 검수 요청 · 검수 결과)
+├─ docs/               팀 규칙 등 보조 문서
 ├─ OLLYEODO_MVP.md
 └─ .env.example
 ```
