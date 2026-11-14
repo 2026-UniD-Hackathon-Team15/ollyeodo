@@ -35,7 +35,7 @@ function FindingCard({ finding }: { finding: Finding }) {
         {(finding.aiValue || finding.realValue) && (
           <dl className="grid grid-cols-2 gap-2">
             <div className="rounded-lg bg-muted p-3">
-              <dt className="text-xs text-muted-foreground">AI 홍보물</dt>
+              <dt className="text-xs text-muted-foreground">AI 메뉴 사진</dt>
               <dd className="font-semibold">{finding.aiValue ?? "—"}</dd>
             </div>
             <div className="rounded-lg bg-muted p-3">
@@ -82,7 +82,7 @@ export function CheckResultView() {
       {/* 종합 신호 */}
       <Card>
         <CardContent className="flex items-center gap-6">
-          <TrafficLight severity={data.overall} />
+          <TrafficLight state={data.overall} />
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">
               검수 #{data.checkId} · 기준일 {data.asOf}
