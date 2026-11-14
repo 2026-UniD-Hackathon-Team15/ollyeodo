@@ -38,7 +38,7 @@ public class Rule {
     private Severity severity;         // 시행 중일 때 심각도
 
     @Enumerated(EnumType.STRING)
-    private Severity preEffectiveSeverity;   // 시행 전 심각도 (예: AI_VIRTUAL_EXPERT 11/26까지 YELLOW)
+    private Severity preEffectiveSeverity;   // 시행 전 심각도 (예: AI_VIRTUAL_EXPERT 11/26까지 GREEN)
 
     @JdbcTypeCode(SqlTypes.JSON)
     private List<String> keywords;     // 캡션 검수용 표현 사전
