@@ -40,13 +40,15 @@ const realApi = {
     return request<Menu>("/api/menus", { method: "POST", body: form });
   },
 
-  createCheck: ({ menuId, aiImage, caption, asOf }: CreateCheckInput) => {
+  createCheck: async ({ menuName, realImage, aiImage, caption, asOf }: CreateCheckInput): Promise<CheckResult> => {
     const form = new FormData();
-    form.append("menuId", String(menuId));
+    form.append("realImage", realImage);
     form.append("aiImage", aiImage);
     form.append("caption", caption);
     if (asOf) form.append("asOf", asOf);
-    return request<CheckResult>("/api/checks", { method: "POST", body: form });
+    const result = await request<CheckResult>("/api/checks", { method: "POST", body: form });
+    // 메뉴 이름은 API 계약에 없어 화면에서 입력한 값을 붙여 둔다
+    return { ...result, menuName: result.menuName ?? menuName };
   },
 
   getCheck: (id: number) => request<CheckResult>(`/api/checks/${id}`),

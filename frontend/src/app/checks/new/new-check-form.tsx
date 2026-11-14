@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useCreateCheck, useCreateMenu } from "@/lib/api/queries";
+import { useCreateCheck } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 import { AnalyzingView } from "./analyzing-view";
 import styles from "./new-check.module.css";
@@ -44,9 +44,17 @@ function isValidImage(file: File) {
   return true;
 }
 
+/**
+ * 기준일 — 데모용 숨은 옵션. `/checks/new?asOf=2026-11-26` 처럼 주소에 붙이면 그날 시행 규칙으로 판정한다
+ * (§1.2·§5.1 AI_VIRTUAL_EXPERT 11/26 🟢 → 11/27 🔴). 없으면 서버가 오늘로 처리한다.
+ */
+function asOfFromUrl() {
+  const value = new URLSearchParams(window.location.search).get("asOf");
+  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
+}
+
 export function NewCheckForm() {
   const router = useRouter();
-  const createMenu = useCreateMenu();
   const createCheck = useCreateCheck();
   const [loading, setLoading] = useState(false);
 
@@ -179,11 +187,13 @@ export function NewCheckForm() {
 
     setLoading(true);
     try {
-      const menu = await createMenu.mutateAsync({ facts: { name }, realImage: realFile });
+      // 실제 사진·AI 사진·설명을 한 번에 보낸다 (POST /api/checks, 메뉴 등록 API는 없음)
       const result = await createCheck.mutateAsync({
-        menuId: menu.id,
+        menuName: name,
+        realImage: realFile,
         aiImage: aiFile,
         caption: caption.trim(),
+        asOf: asOfFromUrl(),
       });
       router.push(`/checks/${result.checkId}`);
     } catch {
@@ -224,6 +234,14 @@ export function NewCheckForm() {
           <div className={cn(styles.group, styles.reveal)} style={delay(3)}>
             <div className={styles.label}>
               실제 메뉴 사진 <small>매장에서 직접 찍은 사진 1장</small>
+              {/* 피그마 「최근 사진에서 고르기」 — 휴대폰에서는 파일 선택 창이 최근 사진(사진 보관함)을 먼저 보여 준다 */}
+              <button
+                type="button"
+                className={cn(styles.changeBtn, styles.labelAction)}
+                onClick={() => realInputRef.current?.click()}
+              >
+                최근 사진에서 고르기
+              </button>
             </div>
             <div className={styles.photo} ref={realRowRef}>
               <div className={styles.thumb}>
@@ -271,7 +289,7 @@ export function NewCheckForm() {
                       height="24"
                       viewBox="0 0 24 24"
                       fill="none"
-                      stroke="#087a5e"
+                      stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"

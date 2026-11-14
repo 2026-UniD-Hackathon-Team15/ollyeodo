@@ -43,7 +43,8 @@ export interface CheckResult {
   overall: Severity;
   findings: Finding[];
   captionFix: string;
-  regenPrompt: { ko: string; en: string };
+  /** 🟢면 백엔드가 null 을 준다 (docs/check-api.md) */
+  regenPrompt: { ko: string; en: string } | null;
   /**
    * 결과 화면 상단에 쓰는 값 (피그마 「03 검수 결과」). §9.1 예시에는 아직 없어 선택 값으로 둔다.
    * 백엔드가 보내 주면 그대로 쓰고, 없으면 화면이 그 부분을 생략한다.
@@ -82,8 +83,11 @@ export interface Rule {
   preEffectiveSeverity?: Severity | null;
 }
 
+/** POST /api/checks 입력 — multipart realImage · aiImage · caption · asOf (§9, docs/check-api.md) */
 export interface CreateCheckInput {
-  menuId: number;
+  /** 백엔드로는 보내지 않고 결과 화면 제목에만 쓴다 (API 계약에 없음) */
+  menuName: string;
+  realImage: File;
   aiImage: File;
   caption: string;
   /** 생략하면 서버가 오늘(Asia/Seoul)로 처리 */
