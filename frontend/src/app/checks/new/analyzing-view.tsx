@@ -61,7 +61,7 @@ export function AnalyzingView({ image }: { image: string }) {
           {"메뉴 사진을 실제 메뉴와\n비교하고 있어요"}
         </h1>
         <p className={cn(styles.lead, styles.reveal)} style={delay(2)}>
-          사진을 두 번씩 읽어서 비교하고 있어요. 이 화면을 닫지 말아 주세요.
+          사진을 세 번씩 읽어서 비교하고 있어요. 이 화면을 닫지 말아 주세요.
         </p>
 
         <div className={cn(styles.thumb, styles.reveal)} style={delay(3)}>
