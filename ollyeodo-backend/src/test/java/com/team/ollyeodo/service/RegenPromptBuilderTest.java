@@ -73,14 +73,40 @@ class RegenPromptBuilderTest {
     }
 
     @Test
-    @DisplayName("문구 수정안: 🔴 표현은 지우고 CAP_FACT는 실물 값으로 바꾸고 연출 이미지 안내를 붙인다")
+    @DisplayName("문구 수정안: 🔴 표현이 든 구절은 통째로 지우고, CAP_FACT는 실물 값으로 바꾸고, 연출 이미지 안내를 붙인다")
     void captionFixRemovesAndReplaces() {
         var result = new JudgeResult(Severity.RED, List.of(
                 red("CAP_FACT", "12겹", "8겹"),
                 red("CAP_MEDICINE", "디톡스", null),
                 green("CAP_ORIGIN", "국내산", true)));
         var out = builder.build(result, REAL, "12겹 크레이프, 디톡스 딸기! 국내산 딸기");
-        assertThat(out.captionFix()).isEqualTo("8겹 크레이프, 딸기! 국내산 딸기 (사진은 연출된 이미지입니다)");
+        assertThat(out.captionFix()).isEqualTo("8겹 크레이프, 국내산 딸기 (사진은 연출된 이미지입니다)");
+    }
+
+    @Test
+    @DisplayName("문구 수정안: 표현만 지워 어색해지던 문장(…100%. 에도 좋은…)을 구절째 지워 자연스럽게 만든다 (#48)")
+    void captionFixDropsWholeSentence() {
+        var result = new JudgeResult(Severity.RED, List.of(red("CAP_HFOOD", "다이어트", null)));
+        var out = builder.build(result, REAL, "바삭한 닭강정, 손님 만족 100%. 다이어트에도 좋은 건강 간식");
+        assertThat(out.captionFix()).isEqualTo("바삭한 닭강정, 손님 만족 100%. (사진은 연출된 이미지입니다)");
+    }
+
+    @Test
+    @DisplayName("문구 수정안: 숫자 안의 구두점(1.5배, 1,000원)에서는 구절을 자르지 않는다")
+    void captionFixKeepsNumbers() {
+        var result = new JudgeResult(Severity.RED, List.of(red("CAP_MEDICINE", "디톡스", null)));
+        var out = builder.build(result, REAL, "1.5배 큰 딸기 1,000원, 디톡스 효과까지");
+        assertThat(out.captionFix()).isEqualTo("1.5배 큰 딸기 1,000원 (사진은 연출된 이미지입니다)");
+    }
+
+    @Test
+    @DisplayName("영어 프롬프트: 1층이면 '1 layer'(단수), 여러 층이면 'layers'")
+    void englishLayerSingular() {
+        var oneLayer = new ExtractedAttrs(List.of(new ExtractedAttrs.Item("딸기", 4, "윗면")),
+                1, 0.6, null, List.of(), List.of(), List.of());
+        var en = builder.build(new JudgeResult(Severity.RED, List.of(red("IMG_EXTRA_ITEM", "블루베리", "없음"))),
+                oneLayer, "케이크").regenPrompt().en();
+        assertThat(avoidLine(en, "Include")).contains("1 layer").doesNotContain("1 layers");
     }
 
     @Test
