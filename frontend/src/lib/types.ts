@@ -45,30 +45,10 @@ export interface CheckResult {
   captionFix: string;
   /** 🟢면 백엔드가 null 을 준다 (docs/check-api.md) */
   regenPrompt: { ko: string; en: string } | null;
-  /**
-   * 결과 화면 상단에 쓰는 값 (피그마 「03 검수 결과」). §9.1 예시에는 아직 없어 선택 값으로 둔다.
-   * 백엔드가 보내 주면 그대로 쓰고, 없으면 화면이 그 부분을 생략한다.
-   */
+  /** 검수한 메뉴 이름 (POST 요청의 menuName 을 백엔드가 저장해 응답에 돌려준다) */
   menuName?: string;
   aiImageUrl?: string;
   realImageUrl?: string;
-}
-
-/**
- * 메뉴 정보 (§8 Menu.facts). 재료·개수·원산지는 사장님이 입력하지 않는다 —
- * 매장에서 찍은 실제 메뉴 사진이 비교 기준이다 (피그마 「01 검수하기」).
- */
-export interface MenuFacts {
-  name: string;
-}
-
-/** POST /api/menus, GET /api/menus 응답 */
-export interface Menu {
-  id: number;
-  name: string;
-  facts: MenuFacts;
-  realImageUrl?: string;
-  createdAt?: string;
 }
 
 /** GET /api/rules 응답 (§8 Rule) */
@@ -83,18 +63,12 @@ export interface Rule {
   preEffectiveSeverity?: Severity | null;
 }
 
-/** POST /api/checks 입력 — multipart realImage · aiImage · caption · asOf (§9, docs/check-api.md) */
+/** POST /api/checks 입력 — multipart menuName · realImage · aiImage · caption · asOf (§9, docs/check-api.md) */
 export interface CreateCheckInput {
-  /** 백엔드로는 보내지 않고 결과 화면 제목에만 쓴다 (API 계약에 없음) */
   menuName: string;
   realImage: File;
   aiImage: File;
   caption: string;
   /** 생략하면 서버가 오늘(Asia/Seoul)로 처리 */
   asOf?: string;
-}
-
-export interface CreateMenuInput {
-  facts: MenuFacts;
-  realImage: File;
 }

@@ -1,12 +1,6 @@
 import { env } from "@/lib/env";
 import { mockApi } from "@/mocks/handlers";
-import type {
-  CheckResult,
-  CreateCheckInput,
-  CreateMenuInput,
-  Menu,
-  Rule,
-} from "@/lib/types";
+import type { CheckResult, CreateCheckInput, Rule } from "@/lib/types";
 
 export class ApiError extends Error {
   constructor(
@@ -67,27 +61,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 const realApi = {
-  listMenus: () => request<Menu[]>("/api/menus"),
-
-  createMenu: ({ facts, realImage }: CreateMenuInput) => {
+  createCheck: ({ menuName, realImage, aiImage, caption, asOf }: CreateCheckInput) => {
     const form = new FormData();
-    form.append("realImage", realImage);
-    form.append(
-      "facts",
-      new Blob([JSON.stringify(facts)], { type: "application/json" }),
-    );
-    return request<Menu>("/api/menus", { method: "POST", body: form });
-  },
-
-  createCheck: async ({ menuName, realImage, aiImage, caption, asOf }: CreateCheckInput): Promise<CheckResult> => {
-    const form = new FormData();
+    form.append("menuName", menuName);
     form.append("realImage", realImage);
     form.append("aiImage", aiImage);
     form.append("caption", caption);
     if (asOf) form.append("asOf", asOf);
-    const result = await request<CheckResult>("/api/checks", { method: "POST", body: form });
-    // 메뉴 이름은 API 계약에 없어 화면에서 입력한 값을 붙여 둔다
-    return { ...result, menuName: result.menuName ?? menuName };
+    return request<CheckResult>("/api/checks", { method: "POST", body: form });
   },
 
   getCheck: (id: number) => request<CheckResult>(`/api/checks/${id}`),

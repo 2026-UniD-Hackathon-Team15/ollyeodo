@@ -1,4 +1,4 @@
-import type { CheckResult, Menu, Rule } from "@/lib/types";
+import type { CheckResult, Rule } from "@/lib/types";
 
 /** 국가법령정보센터 조문 링크 */
 const LAW = {
@@ -129,15 +129,6 @@ export const mockPassedCheckResult: CheckResult = {
   captionFix: "딸기 3개를 올린 크레이프 케이크예요. (사진은 연출된 이미지입니다)",
   regenPrompt: null, // 백엔드도 🟢면 null
 };
-
-export const mockMenus: Menu[] = [
-  {
-    id: 1,
-    name: "딸기 크레이프 케이크",
-    facts: { name: "딸기 크레이프 케이크" },
-    createdAt: "2026-11-14T18:00:00+09:00",
-  },
-];
 
 /**
  * GET /api/rules 목업 — 백엔드 RuleSeedData(§6 판정 기준표 13행)와 같은 값 (임의 변경 금지).
