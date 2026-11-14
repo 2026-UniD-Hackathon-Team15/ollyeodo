@@ -68,36 +68,29 @@ CORS는 기본적으로 `http://localhost:3000`, `http://localhost:5173`을 허�
 다른 프론트 주소는 `APP_CORS_ALLOWED_ORIGINS` 환경변수에 쉼표로 구분해 설정합니다.
 이미지 병렬 추출에는 `extractionExecutor` 빈을 `CompletableFuture.supplyAsync`에 전달합니다.
 
-Spring AI 1.1.8의 ChatClient 공통 의존성을 포함합니다.
-AI 제공자는 MVP §16에서 미정이므로 제공자 starter와 실제 호출 연결은 #7에서 추가합니다.
+Spring AI 1.1.8 OpenAI starter를 사용합니다. 저장소 루트 `.env`의
+`AI_API_KEY`, `AI_MODEL`은 Spring Config Import로 로드됩니다.
+모델 기본값은 `gpt-5.6-luna`이며 temperature는 기본 미설정으로 요청에서 생략합니다.
+temperature를 지원하는 모델로 변경하면 `AI_TEMPERATURE`(예: `0`) 또는
+`spring.ai.openai.chat.options.temperature`를 설정해 선택적으로 적용할 수 있습니다.
+Spring AI 자체의 기본값 0.7도 미설정 시 전송하지 않도록 처리합니다.
+실행 위치가 루트 또는 `ollyeodo-backend/`인 경우 모두 `.env`를 찾습니다.
+키를 코드·명령줄 인자·Git에 넣지 않습니다.
 
-### 프론트엔드 (`frontend/`)
-
-Node.js 20.9 이상이 필요합니다.
-
-```bash
-cd frontend
-npm install
-cp .env.example .env.local   # 처음 한 번
-npm run dev                   # http://localhost:3000
-```
-
-- `NEXT_PUBLIC_USE_MOCK=true` 이면 백엔드 없이 목업 데이터(§9.1 응답 예시)로 화면이 동작합니다. 실제 API를 쓰려면 `false`로 바꾸고 `NEXT_PUBLIC_API_BASE_URL`을 백엔드 주소로 맞춥니다.
-- 화면: `/menus/new` 메뉴 등록 · `/checks/new` 검수하기 · `/checks/{id}` 검수 결과 (목업: `/checks/12`)
-- 검사: `npm run lint`, `npm run build`
-
-### 환경변수
-
-Spring Boot는 `.env`를 자동으로 읽지 않습니다. 필요한 값은 IDE 실행 설정이나
-프로세스 환경변수로 전달하며, 비밀값을 코드나 설정 파일에 직접 적지 않습니다.
-
-Supabase·AI 연동 시 `.env.example`을 복사해 `.env`를 만들고 실제 값을 채웁니다. **`.env`는 커밋하지 않습니다.**
+실제 API 테스트는 `@Tag("live")`이며 일반 `test`/`build`에서 제외합니다.
+`ollyeodo-backend/src/test/resources/demo/`의 `strawberry-cake.png` 또는
+`strawberry-cake.jpg`를 읽습니다. PNG를 우선 사용하며 둘 다 없으면 skip합니다.
+이미지를 준비한 뒤 다음 명령을 실행하면 실제 API 호출 비용이 발생합니다.
 
 ```bash
-cp .env.example .env
+cd ollyeodo-backend
+./gradlew liveExtractionTest
 ```
 
-- `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_PASSWORD`, AI API 키는 **서버 전용**입니다. 프론트 코드와 Git에 절대 넣지 않습니다.
+같은 사진으로 4회 병렬 추출하고 캡션도 1회 추출합니다.
+응답 시간은 로그에, 추출값과 일치 여부는 `build/reports/ai-extraction-demo.json`에 저장됩니다.
+`APP_EXTRACTION_TIMEOUT`으로 HTTP·서비스 제한시간(기본 60s)을 조정할 수 있습니다.
+키 없이 서버를 실행할 때는 `SPRING_AI_MODEL_CHAT=none`으로 AI 구성을 비활성화합니다.
 
 ## 협업 규칙 요약
 
@@ -106,3 +99,20 @@ cp .env.example .env
 - 이슈 본문의 **선행 이슈**가 머지된 뒤 시작합니다.
 - **작은 단위로 자주 커밋. force push·이력 삭제 금지** (대회 코드 검증 요건)
 - 11/15 10:30 코드 프리즈 이후에는 버그 수정만 합니다.
+
+### 추출 자기일관성 비교
+
+이미지 추출에는 메뉴 재료명 목록을 함께 전달합니다. 메뉴 재료별 개수는 정확한 재료명으로
+각각 비교하고 위치 설명·접시·장식 설명은 일치 여부에 사용하지 않습니다.
+`agreement.items`는 재료별 두 개수와 일치 여부를 담습니다. null·누락·중복 응답은 해당 재료만
+확인 불가로 처리하며, 메뉴 외 재료는 각 회차의 `extraItemCandidates`로 분리합니다.
+후속 IMG_EXTRA_ITEM 판정에서는 AI·실물 양쪽의 두 원본 후보를 확인해야 합니다.
+
+`plate`, `garnish`는 원본의 참고값으로 유지합니다. `layers`, `people`, `visible_text`는 계속 비교합니다.
+MVP §6의 1.2/1.5배는 AI·실물 간 판정 임계값이며 추출 오차 허용값이 아닙니다.
+추출의 `fill_ratio` 허용 오차 상수 `ImageExtractionResult.FILL_RATIO_TOLERANCE`는 미설정입니다.
+동일 수치는 MATCH, 서로 다른 수치는 TOLERANCE_UNSET, 확인 불가 값은 UNKNOWN으로 반환합니다.
+허용 오차가 결정된 경우 절대 차이가 허용값 이하인지 비교하도록 구현했습니다.
+제안값은 0.05(5%p)이나 승인 전까지 적용하지 않습니다. §6 판정 임계값과 심각도는 변경하지 않습니다.
+
+live 테스트의 재료명 목록은 데모 입력 `딸기`, `휘핑크림`이며 실제 메뉴 등록값을 대신하지 않습니다.
