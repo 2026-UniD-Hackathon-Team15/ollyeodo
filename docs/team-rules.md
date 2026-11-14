@@ -84,4 +84,4 @@ test: ComparisonService 경계값 테스트 (#8)
 | `⚖️ legal` | 법령 근거 판정 규칙을 다루는 이슈. 임계값·근거 조항 임의 변경 금지 |
 | `P0 필수` / `P1 권장` | 코드 프리즈 전 필수 / 시간 남으면 |
 | `setup` | 프로젝트·인프라 세팅 |
-| `blocked` | 선행 이슈 미완료 |
+| `blocked` | 선행 이슈 미완료. **선행 이슈가 모두 닫히면 자동으로 떨어진다** (`.github/workflows/blocked-label.yml`) |
