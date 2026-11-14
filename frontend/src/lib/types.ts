@@ -28,6 +28,11 @@ export interface Finding {
   realValue?: string;
   evidence?: string;
   lawRef?: string;
+  /**
+   * 🟢 이지만 올리기 전에 사장님이 직접 한 번 봐야 할 항목 (피그마 「통과지만 한 번 확인해 보세요」).
+   * 판정(severity)은 바꾸지 않는 표시용 값이다. 기준은 팀 합의 후 §6에 추가 (이슈 #4·#8·#9·#11).
+   */
+  checkOnce?: boolean;
 }
 
 /** POST /api/checks, GET /api/checks/{id} 응답 (§9.1) */
@@ -39,6 +44,13 @@ export interface CheckResult {
   findings: Finding[];
   captionFix: string;
   regenPrompt: { ko: string; en: string };
+  /**
+   * 결과 화면 상단에 쓰는 값 (피그마 「03 검수 결과」). §9.1 예시에는 아직 없어 선택 값으로 둔다.
+   * 백엔드가 보내 주면 그대로 쓰고, 없으면 화면이 그 부분을 생략한다.
+   */
+  menuName?: string;
+  aiImageUrl?: string;
+  realImageUrl?: string;
 }
 
 /**
