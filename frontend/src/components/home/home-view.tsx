@@ -16,6 +16,7 @@ const FIXED_PHOTO = "/home/ai-menu-fixed.jpg";
 const findings = [
   { title: "재료 개수", detail: "AI 사진 딸기 9개 → 실제 3개" },
   { title: "실물에 없는 재료", detail: "AI 사진 블루베리 → 실제 없음" },
+  { title: "건강기능식품으로 오해할 표현", detail: "메뉴 설명 “혈당 걱정 없는”" },
   { title: "의약품으로 오해할 표현", detail: "메뉴 설명 “디톡스”" },
 ];
 
@@ -26,7 +27,7 @@ const steps = [
   },
   {
     title: ["AI 메뉴 사진과 설명을 넣으면", "하나씩 비교해요"],
-    body: ["사진은 두 번씩 읽어 재료와 개수를 세고,", "메뉴 설명 속 표현을 법령 기준표와 맞춰 봐요."],
+    body: ["사진은 세 번씩 읽어 재료와 개수를 세고,", "메뉴 설명 속 표현을 법령 기준표와 맞춰 봐요."],
   },
   {
     title: ["다른 곳은", "근거 조항과 함께"],
@@ -49,7 +50,7 @@ const statementTotal = statementWords.reduce((n, line) => n + line.length, 0);
 const stats = [
   { to: 11, unit: "개", text: "법령에 근거한 판정 규칙 (안내 2개 별도)" },
   { to: 2, unit: "개", text: "근거 법률 — 식품표시광고법, 표시광고법" },
-  { to: 2, unit: "번", text: "사진마다 두 번씩 읽어서 결과를 맞춰 봐요." },
+  { to: 3, unit: "번", text: "사진마다 세 번씩 읽어서 결과를 맞춰 봐요." },
 ];
 
 const laws = [

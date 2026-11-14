@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { RequireAuth } from "@/components/require-auth";
 import { CheckResultView } from "./check-result-view";
 import { CheckResultSkeleton } from "./check-result-skeleton";
 
@@ -9,7 +10,9 @@ export const metadata: Metadata = { title: "검수 결과 — Re:Ad" };
 export default function CheckResultPage() {
   return (
     <Suspense fallback={<CheckResultSkeleton />}>
-      <CheckResultView />
+      <RequireAuth>
+        <CheckResultView />
+      </RequireAuth>
     </Suspense>
   );
 }

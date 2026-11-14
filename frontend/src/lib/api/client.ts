@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { supabase } from "@/lib/supabase";
 import { mockApi } from "@/mocks/handlers";
 import type { CheckResult, CheckStats, CreateCheckInput, Rule } from "@/lib/types";
 
@@ -45,15 +46,28 @@ function statusMessage(status: number) {
   }
 }
 
+async function accessToken() {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  const token = await accessToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
   let res: Response;
   try {
-    res = await fetch(`${env.apiBaseUrl}${path}`, init);
+    res = await fetch(`${env.apiBaseUrl}${path}`, { ...init, headers });
   } catch {
     // 서버가 꺼져 있거나 네트워크가 끊김
     throw new ApiError(0, "서버에 연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.");
   }
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+    }
     const text = await res.text().catch(() => "");
     throw new ApiError(res.status, serverMessage(text) || statusMessage(res.status));
   }
@@ -75,14 +89,7 @@ const realApi = {
 
   listRules: () => request<Rule[]>("/api/rules"),
 
-  // 로그인 전 임시: 401이면 빈 통계(0회)를 보여 준다. 로그인 작업 때 이 fallback을 지운다.
-  getStats: () =>
-    request<CheckStats>("/api/checks/stats").catch((e: unknown) => {
-      if (e instanceof ApiError && e.status === 401) {
-        return { totalChecks: 0, redChecks: 0, greenChecks: 0, ruleCounts: [], recentChecks: [] };
-      }
-      throw e;
-    }),
+  getStats: () => request<CheckStats>("/api/checks/stats"),
 };
 
 /** NEXT_PUBLIC_USE_MOCK 으로 실제 API ↔ 목업 전환 */
