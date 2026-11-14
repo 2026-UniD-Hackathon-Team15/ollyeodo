@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { AuthNav } from "./auth-nav";
 import { Logo } from "./logo";
 import { NavLinks, NavLinksStatic } from "./nav-links";
 
@@ -12,9 +13,12 @@ export function SiteHeader() {
           <Logo />
         </Link>
         {/* 현재 경로(usePathname)는 요청 시점 값이라 Suspense 로 감싼다 (cacheComponents) */}
-        <Suspense fallback={<NavLinksStatic />}>
-          <NavLinks />
-        </Suspense>
+        <div className="flex items-center gap-8">
+          <Suspense fallback={<NavLinksStatic />}>
+            <NavLinks />
+          </Suspense>
+          <AuthNav />
+        </div>
       </div>
     </header>
   );

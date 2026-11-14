@@ -6,4 +6,7 @@ export const env = {
   apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080",
   /** "true"면 백엔드 없이 목업 데이터로 동작 */
   useMock: process.env.NEXT_PUBLIC_USE_MOCK === "true",
+  /** Supabase 프로젝트 URL·anon(publishable) 키 — 공개 값 */
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
 } as const;
