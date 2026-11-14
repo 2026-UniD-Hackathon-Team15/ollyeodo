@@ -63,7 +63,7 @@ export interface Rule {
   preEffectiveSeverity?: Severity | null;
 }
 
-/** POST /api/checks 입력 — multipart realImage · aiImage · caption · asOf (§9, docs/check-api.md) */
+/** POST /api/checks 입력 — multipart menuName · realImage · aiImage · caption · asOf (§9, docs/check-api.md) */
 export interface CreateCheckInput {
   menuName: string;
   realImage: File;
