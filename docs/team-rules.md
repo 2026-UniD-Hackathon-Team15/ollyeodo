@@ -43,18 +43,18 @@ fix/#9-asof-timezone ───────┘
 | 3 | Supabase 대회용 프로젝트 연결 + Storage | BE | #1 | `chore/#3-supabase-storage` |
 | 4 | JPA 엔티티 4개 + jsonb 매핑 + RLS | BE | #3 | `feat/#4-jpa-entities` |
 | 5 | ⚖️ 규칙 데이터 13개 적재 (근거 조항·시행일) | BE | #4 | `feat/#5-rule-seed-data` |
-| 6 | 메뉴 API | BE | #3, #4 | `feat/#6-menu-api` |
+| ~~6~~ | ~~메뉴 API~~ — ❌ 닫음 (2026-11-14 스코프 변경) | — | — | — |
 | 7 | AI 속성·캡션 주장 추출 (ExtractionService) | BE | #1 | `feat/#7-ai-extraction` |
 | 8 | ⚖️ 이미지 비교 판정 ComparisonService | BE | #1 | `feat/#8-comparison-service` |
 | 9 | ⚖️ 캡션 검수 + RuleEngine (asOf 판정) | BE | #5, #8 | `feat/#9-caption-rule-engine` |
 | 10 | 재생성 프롬프트 RegenPromptBuilder | BE | #9 | `feat/#10-regen-prompt` |
-| 11 | 검수 API `POST/GET /api/checks` | BE | #6, #7, #9, #10 | `feat/#11-check-api` |
+| 11 | 검수 API `POST/GET /api/checks` | BE | #7, #9, #10 | `feat/#11-check-api` |
 | 12 | ⚖️ 규칙 API `GET /api/rules` | BE | #5 | `feat/#12-rule-api` |
 | 13 | 백엔드 Docker + 배포 | BE | #11 | `chore/#13-backend-deploy` |
-| 14 | 메뉴 등록 화면 | FE | #2 | `feat/#14-menu-form-page` |
+| ~~14~~ | ~~메뉴 등록 화면~~ — ❌ 닫음 (2026-11-14 스코프 변경) | — | — | — |
 | 15 | 검수 요청 화면 + 로딩 | FE | #2 | `feat/#15-check-request-page` |
 | 16 | ⚖️ 검수 결과 + 재생성 프롬프트 화면 | FE | #2 | `feat/#16-check-result-page` |
-| 17 | 실 API 연동 | FE | #6, #11, #12, #14, #15, #16 | `feat/#17-api-integration` |
+| 17 | 실 API 연동 | FE | #11, #12, #15, #16 | `feat/#17-api-integration` |
 | 18 | 프론트엔드 배포 | FE | #13, #17 | `chore/#18-frontend-deploy` |
 | 19 | ⚖️ 데모 시나리오 E2E 점검 | BE+FE | #13, #18 | `test/#19-demo-e2e` |
 | 20 | (권장) 검수 기록 통계 API | BE | #11 | `feat/#20-check-stats-api` |
