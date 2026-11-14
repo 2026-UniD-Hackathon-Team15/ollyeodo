@@ -16,6 +16,7 @@ const FIXED_PHOTO = "/home/ai-menu-fixed.jpg";
 const findings = [
   { title: "재료 개수", detail: "AI 사진 딸기 9개 → 실제 3개" },
   { title: "실물에 없는 재료", detail: "AI 사진 블루베리 → 실제 없음" },
+  { title: "건강기능식품으로 오해할 표현", detail: "메뉴 설명 “혈당 걱정 없는”" },
   { title: "의약품으로 오해할 표현", detail: "메뉴 설명 “디톡스”" },
 ];
 
@@ -210,7 +211,7 @@ export function HomeView() {
               딸기 크레이프 케이크
             </div>
             <div className={s.resultV}>
-              이대로 올리기 전에 <em>3곳</em>을 고쳐 주세요
+              이대로 올리기 전에 <em>4곳</em>을 고쳐 주세요
             </div>
             <div className={s.resultRows}>
               {findings.map((f, i) => (
@@ -350,7 +351,7 @@ export function HomeView() {
                 <TrafficLight state={fixed ? "GREEN" : "RED"} />
                 <div className={s.headline}>
                   <span className={s.hR}>
-                    <em>3곳</em>을 고쳐 주세요
+                    <em>4곳</em>을 고쳐 주세요
                   </span>
                   <span className={s.hG}>올려도 됩니다</span>
                 </div>
@@ -519,7 +520,7 @@ function ResultScreen({ on }: { on: boolean }) {
       <div className={s.verdict}>
         이대로 올리기 전에
         <br />
-        <em>3곳</em>을 고쳐 주세요
+        <em>4곳</em>을 고쳐 주세요
       </div>
       <div className={s.thumbs}>
         <div>
