@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { Logo } from "./logo";
 import { NavLinks, NavLinksStatic } from "./nav-links";
 
+/** 피그마 Header v2 (11:90) — 높이 64, 좌우 40 */
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 font-bold">
-          <span aria-hidden>🚦</span>
-          올려도 될까
+    <header className="sticky top-0 z-20 bg-white/90 backdrop-blur">
+      <div className="flex h-16 items-center justify-between px-4 sm:px-10">
+        <Link href="/" aria-label="Re:Ad 홈">
+          <Logo />
         </Link>
         {/* 현재 경로(usePathname)는 요청 시점 값이라 Suspense 로 감싼다 (cacheComponents) */}
         <Suspense fallback={<NavLinksStatic />}>

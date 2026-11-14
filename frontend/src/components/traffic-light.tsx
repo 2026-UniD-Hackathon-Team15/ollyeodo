@@ -3,9 +3,9 @@ import { severityMeta } from "@/lib/severity";
 import type { Severity } from "@/lib/types";
 
 const tone: Record<Severity, string> = {
-  GREEN: "bg-signal-green-soft text-signal-green border-signal-green/30",
-  YELLOW: "bg-signal-yellow-soft text-signal-yellow border-signal-yellow/30",
-  RED: "bg-signal-red-soft text-signal-red border-signal-red/30",
+  GREEN: "bg-signal-green-soft text-signal-green-ink",
+  YELLOW: "bg-signal-yellow-soft text-signal-yellow-ink",
+  RED: "bg-signal-red-soft text-signal-red-ink",
 };
 
 const lamp: Record<Severity, string> = {
@@ -17,41 +17,57 @@ const lamp: Record<Severity, string> = {
 /** 작은 신호 배지 — 항목 카드 등에 사용 */
 export function SeverityBadge({
   severity,
+  label,
   className,
 }: {
   severity: Severity;
+  /** 기본 라벨 대신 쓸 문구 (예: "직접 확인") */
+  label?: string;
   className?: string;
 }) {
-  const meta = severityMeta[severity];
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold",
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold",
         tone[severity],
         className,
       )}
     >
-      <span aria-hidden className={cn("size-2 rounded-full", lamp[severity])} />
-      {meta.label}
+      <span aria-hidden className={cn("size-1.5 rounded-full", lamp[severity])} />
+      {label ?? severityMeta[severity].label}
     </span>
   );
 }
 
-/** 큰 3구 신호등 — 결과 화면 상단 종합 신호에 사용 */
+/** 신호등에 켤 불 — 결과 신호(RED·GREEN)와 "비교하고 있어요" 화면의 노란불(COMPARING) */
+export type SignalState = Severity | "COMPARING";
+
+const order: Severity[] = ["RED", "YELLOW", "GREEN"];
+
+/**
+ * 가로 3구 신호등 — 피그마 Signal v2 (11:107 RED · 11:111 YELLOW · 11:115 GREEN), 74×28.
+ *
+ * 디자인 기준: 결과 화면은 빨강·초록만 켠다. 노란불은 분석 중("비교하고 있어요") 화면에서만
+ * `state="COMPARING"`으로 켜고 깜빡인다. 판정 값(§6 severity)은 그대로 두고 보여 주는 방식만 정한다.
+ */
 export function TrafficLight({
-  severity,
+  state,
+  size = "md",
   className,
 }: {
-  severity: Severity;
+  state: SignalState;
+  size?: "md" | "lg";
   className?: string;
 }) {
-  const order: Severity[] = ["RED", "YELLOW", "GREEN"];
+  const on: Severity = state === "COMPARING" ? "YELLOW" : state;
+  const label = state === "COMPARING" ? "비교하고 있어요" : severityMeta[state].label;
   return (
-    <div
+    <span
       role="img"
-      aria-label={`종합 신호: ${severityMeta[severity].label}`}
+      aria-label={`신호: ${label}`}
       className={cn(
-        "inline-flex flex-col gap-2 rounded-2xl bg-neutral-900 p-2.5 shadow-inner",
+        "inline-flex shrink-0 items-center rounded-full bg-ink",
+        size === "md" ? "h-7 w-[74px] justify-between px-[9px]" : "h-10 w-[106px] justify-between px-[13px]",
         className,
       )}
     >
@@ -59,12 +75,14 @@ export function TrafficLight({
         <span
           key={s}
           className={cn(
-            "size-8 rounded-full transition-opacity",
-            lamp[s],
-            s === severity ? "opacity-100 shadow-[0_0_16px] shadow-current" : "opacity-20",
+            "rounded-full",
+            size === "md" ? "size-3.5" : "size-5",
+            s === on
+              ? cn(lamp[s], state === "COMPARING" && "motion-safe:animate-signal-blink")
+              : "bg-white/[0.13]",
           )}
         />
       ))}
-    </div>
+    </span>
   );
 }

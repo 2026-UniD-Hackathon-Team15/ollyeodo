@@ -5,25 +5,37 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { href: "/menus/new", label: "메뉴 등록" },
+  { href: "/", label: "홈" },
   { href: "/checks/new", label: "검수하기" },
 ];
 
+/** 검수 결과(/checks/12)는 「검수하기」 탭에 속한다 */
+function isActive(href: string, pathname?: string) {
+  if (!pathname) return false;
+  if (href === "/") return pathname === "/";
+  if (href === "/checks/new") return pathname.startsWith("/checks");
+  return pathname.startsWith(href);
+}
+
 function Links({ pathname }: { pathname?: string }) {
   return (
-    <nav className="flex gap-1 text-sm">
-      {nav.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={cn(
-            "rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-            pathname?.startsWith(item.href) && "bg-muted font-medium text-foreground",
-          )}
-        >
-          {item.label}
-        </Link>
-      ))}
+    <nav className="flex items-center gap-5 text-[15px] leading-[23px] font-medium sm:gap-8">
+      {nav.map((item) => {
+        const active = isActive(item.href, pathname);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "transition-colors hover:text-ink",
+              active ? "text-ink" : "text-sub",
+            )}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }
