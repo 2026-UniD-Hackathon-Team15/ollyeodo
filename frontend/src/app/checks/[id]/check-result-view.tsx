@@ -53,7 +53,9 @@ const ONE_RUN_ONLY = /\s*\(2회 추출 중 한 번만 기준을 넘어 🟢로 �
 
 /** 백엔드 설명을 사장님이 읽을 문장으로 (판정·내용은 그대로, 개발용 표기만 바꾼다) */
 function readable(evidence?: string) {
-  return evidence?.replace(ONE_RUN_ONLY, " (두 번 비교해 한 번만 차이가 보여 통과로 뒀어요)");
+  return evidence
+    ?.replace(ONE_RUN_ONLY, " (두 번 비교해 한 번만 차이가 보여 통과로 뒀어요)")
+    .replace(/^실물의 1배$/, "실물과 같아요");
 }
 
 /** "접시 대비 0.8" → "80%" (백엔드 IMG_FILL 값) */
