@@ -231,6 +231,9 @@ export function NewCheckForm() {
               onPick={setRealPhoto}
               onClear={clearRealPhoto}
             />
+            <p className={styles.hint}>
+              AI 메뉴 사진과 비슷한 각도에서 찍어 주세요. 더 정확하게 비교할 수 있어요.
+            </p>
           </div>
 
           <div className={cn(styles.group, styles.reveal)} style={delay(4)}>
