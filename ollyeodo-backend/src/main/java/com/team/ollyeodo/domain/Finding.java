@@ -36,6 +36,9 @@ public class Finding {
 
     private String lawRef;
 
+    @Column(nullable = false)
+    private boolean checkOnce;
+
     public Finding(String ruleCode, Severity severity, String aiValue,
                    String realValue, String evidence, String lawRef) {
         this.ruleCode = ruleCode;
