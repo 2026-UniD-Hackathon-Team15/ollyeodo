@@ -23,7 +23,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Re:Ad — 실제 메뉴 사진과 AI 메뉴 사진 대조",
+  title: "Re:Ad",
   description:
     "직접 찍은 실제 메뉴 사진과 AI로 만든 메뉴 사진을 대조해, 무엇이 얼마나 다른지 근거 조항과 함께 찾아 주는 서비스",
 };
