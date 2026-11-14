@@ -24,7 +24,7 @@
 | 백엔드 | Java 21, Spring Boot 3.x, Spring Data JPA, Spring AI |
 | DB·스토리지 | Supabase (PostgreSQL, Storage) — Seoul 리전 |
 | AI | 멀티모달 비전 모델 (미정: OpenAI / Gemini / Claude) |
-| 프론트엔드 | 미정 |
+| 프론트엔드 | Next.js 16 (App Router) · TypeScript · Tailwind CSS · shadcn/ui · TanStack Query |
 | 배포 | Docker → Render 또는 AWS EC2 |
 
 ## 레포 구조 (예정)
@@ -40,7 +40,9 @@
 
 ## 로컬 실행
 
-Java 21을 설치한 뒤 저장소 루트에서 실행합니다. 로컬 DB는 H2이며,
+### 백엔드 (`ollyeodo-backend/`)
+
+Java 21이 필요합니다. 로컬 DB는 H2이며,
 현재 초기 설정과 헬스 API 실행에는 외부 DB나 AI API 키가 필요하지 않습니다.
 
 ```bash
@@ -68,6 +70,21 @@ CORS는 기본적으로 `http://localhost:3000`, `http://localhost:5173`을 허�
 
 Spring AI 1.1.8의 ChatClient 공통 의존성을 포함합니다.
 AI 제공자는 MVP §16에서 미정이므로 제공자 starter와 실제 호출 연결은 #7에서 추가합니다.
+
+### 프론트엔드 (`frontend/`)
+
+Node.js 20.9 이상이 필요합니다.
+
+```bash
+cd frontend
+npm install
+cp .env.example .env.local   # 처음 한 번
+npm run dev                   # http://localhost:3000
+```
+
+- `NEXT_PUBLIC_USE_MOCK=true` 이면 백엔드 없이 목업 데이터(§9.1 응답 예시)로 화면이 동작합니다. 실제 API를 쓰려면 `false`로 바꾸고 `NEXT_PUBLIC_API_BASE_URL`을 백엔드 주소로 맞춥니다.
+- 화면: `/menus/new` 메뉴 등록 · `/checks/new` 검수하기 · `/checks/{id}` 검수 결과 (목업: `/checks/12`)
+- 검사: `npm run lint`, `npm run build`
 
 ### 환경변수
 
