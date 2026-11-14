@@ -15,6 +15,12 @@ public class CheckExceptionHandler {
         return ProblemDetail.forStatusAndDetail(exception.getStatusCode(), exception.getReason());
     }
 
+    /** 다른 음식이라 비교 불가 → 검수 불가 안내를 그대로 보여 준다 */
+    @ExceptionHandler(com.team.ollyeodo.ai.DifferentFoodException.class)
+    public ProblemDetail differentFood(com.team.ollyeodo.ai.DifferentFoodException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
+    }
+
     @ExceptionHandler(ExtractionException.class)
     public ProblemDetail extractionFailed(ExtractionException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY,

@@ -3,6 +3,7 @@ package com.team.ollyeodo.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.team.ollyeodo.ai.CaptionClaims;
+import com.team.ollyeodo.ai.CaptionReview;
 import com.team.ollyeodo.ai.ExtractedAttrs;
 import com.team.ollyeodo.domain.Rule;
 import com.team.ollyeodo.domain.Severity;
@@ -287,5 +288,112 @@ class RuleEngineTest {
                 claims(null, List.of(), "옛표현"), real(8, 4), aiPlain(), aiPlain()), List.of(old));
 
         assertThat(find(r, "CAP_OLD")).isEmpty();
+    }
+
+    // ---------- §6.1.1 적용 판단 · §6.2 AI 문구 분류 ----------
+
+    private static ExtractedAttrs realWith(Boolean count, Boolean fill, Boolean layer) {
+        return new ExtractedAttrs(List.of(new ExtractedAttrs.Item("닭강정", null, "그릇")),
+                null, 0.8, "그릇", List.of(), List.of(), List.of(), "닭강정", List.of(
+                new ExtractedAttrs.Applicability("IMG_COUNT", count, "수북이 쌓여 셀 수 없음"),
+                new ExtractedAttrs.Applicability("IMG_FILL", fill, "그릇이 보임"),
+                new ExtractedAttrs.Applicability("IMG_LAYER", layer, "층으로 쌓인 음식이 아님")));
+    }
+
+    private static CaptionReview review(CaptionReview.Item... items) {
+        return new CaptionReview(List.of(items));
+    }
+
+    private static CaptionReview.Item item(String expr, String code) {
+        return new CaptionReview.Item(expr, code, null, null);
+    }
+
+    private JudgeResult judgeAi(ComparisonResult r1, ComparisonResult r2, ExtractedAttrs realFirst,
+                                ExtractedAttrs realSecond, String caption, CaptionReview rv1, CaptionReview rv2) {
+        return engine.judge(new JudgeInput(TODAY, r1, r2, claims(null, List.of()), realFirst, aiPlain(), aiPlain(),
+                realSecond, caption, rv1, rv2), rules);
+    }
+
+    @Test
+    @DisplayName("§6.3-5 실물 2회 중 한 번이라도 applicable=false면 비교하지 않고 해당 없음 (종합에 영향 없음)")
+    void notApplicableSkipsComparison() {
+        var red = run(fc("IMG_LAYER", Severity.RED, "3겹", "1겹", "층 수 다름"));
+        JudgeResult r = judgeAi(red, red, realWith(true, true, true), realWith(true, true, false),
+                "바삭한 닭강정 (사진은 연출된 이미지입니다)", review(), review());
+
+        JudgedFinding f = find(r, "IMG_LAYER").orElseThrow();
+        assertThat(f.severity()).isEqualTo(Severity.GREEN);
+        assertThat(f.evidence()).startsWith("해당 없음").contains("층으로 쌓인 음식이 아님");
+        assertThat(r.overall()).isEqualTo(Severity.GREEN);
+    }
+
+    @Test
+    @DisplayName("두 번 모두 applicable=true면 그대로 비교한다")
+    void applicableIsCompared() {
+        var red = run(fc("IMG_FILL", Severity.RED, "접시 대비 1.0", "실물의 2배", "양 다름"));
+        JudgeResult r = judgeAi(red, red, realWith(false, true, false), realWith(false, true, false),
+                "닭강정", review(), review());
+
+        assertThat(find(r, "IMG_FILL").orElseThrow().severity()).isEqualTo(Severity.RED);
+        assertThat(find(r, "IMG_COUNT").orElseThrow().evidence()).startsWith("해당 없음");
+    }
+
+    @Test
+    @DisplayName("§6.3-6 문구 분류 2회가 같은 표현·같은 코드면 🔴, 근거 조항은 규칙표에서")
+    void classifiedBothRunsIsRed() {
+        JudgeResult r = judgeAi(run(), run(), null, null, "속이 편해지는 디톡스 닭강정",
+                review(item("디톡스", "CAP_MEDICINE")), review(item("디톡스 닭강정", "CAP_MEDICINE")));
+
+        JudgedFinding f = find(r, "CAP_MEDICINE").orElseThrow();
+        assertThat(f.severity()).isEqualTo(Severity.RED);
+        assertThat(f.lawRef()).isEqualTo("식품표시광고법 제8조①2호");
+        assertThat(f.evidence()).doesNotContain("간이 검수");
+    }
+
+    @Test
+    @DisplayName("문구 분류가 한 번만 걸리면 🟢")
+    void classifiedOneRunIsGreen() {
+        JudgeResult r = judgeAi(run(), run(), null, null, "동네 최고 닭강정",
+                review(item("동네 최고", "CAP_SUPERLATIVE")), review());
+
+        assertThat(find(r, "CAP_SUPERLATIVE").orElseThrow().severity()).isEqualTo(Severity.GREEN);
+        assertThat(r.overall()).isEqualTo(Severity.GREEN);
+    }
+
+    @Test
+    @DisplayName("§6.3-8 문구에 없는 인용, 표에 없는 코드는 버린다")
+    void invalidQuoteOrCodeDiscarded() {
+        JudgeResult r = judgeAi(run(), run(), null, null, "맛있는 닭강정",
+                review(item("암 예방", "CAP_DISEASE"), item("맛있는", "CAP_TASTY")),
+                review(item("암 예방", "CAP_DISEASE"), item("맛있는", "CAP_TASTY")));
+
+        assertThat(find(r, "CAP_DISEASE")).isEmpty();
+        assertThat(find(r, "CAP_TASTY")).isEmpty();
+        assertThat(r.overall()).isEqualTo(Severity.GREEN);
+    }
+
+    @Test
+    @DisplayName("CAP_FACT는 claimed ≠ observed일 때만 🔴")
+    void classifiedFactNeedsDifference() {
+        var diff = new CaptionReview.Item("12겹 크레이프", "CAP_FACT", "12겹", "8겹");
+        var same = new CaptionReview.Item("딸기 5개", "CAP_FACT", "5개", "5개");
+        JudgeResult r = judgeAi(run(), run(), null, null, "12겹 크레이프, 딸기 5개",
+                review(diff, same), review(diff, same));
+
+        var facts = r.findings().stream().filter(f -> f.ruleCode().equals("CAP_FACT")).toList();
+        assertThat(facts).hasSize(1);
+        assertThat(facts.get(0).severity()).isEqualTo(Severity.RED);
+        assertThat(facts.get(0).aiValue()).isEqualTo("12겹");
+        assertThat(facts.get(0).realValue()).isEqualTo("8겹");
+    }
+
+    @Test
+    @DisplayName("§6.3-7 분류 실패(null)면 키워드 간이 검수로 대신하고 표시한다")
+    void fallbackIsMarkedSimpleCheck() {
+        JudgeResult r = judgeAi(run(), run(), null, null, "속이 편한 디톡스 닭강정", null, null);
+
+        JudgedFinding f = find(r, "CAP_MEDICINE").orElseThrow();
+        assertThat(f.severity()).isEqualTo(Severity.RED);
+        assertThat(f.evidence()).endsWith("(간이 검수)");
     }
 }

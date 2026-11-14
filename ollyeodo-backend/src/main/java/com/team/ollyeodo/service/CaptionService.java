@@ -1,10 +1,13 @@
 package com.team.ollyeodo.service;
 
 import com.team.ollyeodo.ai.CaptionClaims;
+import com.team.ollyeodo.ai.CaptionReview;
 import com.team.ollyeodo.ai.ExtractedAttrs;
 import com.team.ollyeodo.domain.Rule;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -17,6 +20,12 @@ class CaptionService {
 
     static final String ORIGIN_CHECK = "원산지 표기가 실제와 같은지 직접 확인해 주세요";
     static final String AI_LABEL_TIP = "'연출된 이미지입니다' 문구를 함께 적는 것을 권장해요";
+    static final String SIMPLE_CHECK = " (간이 검수)";
+    static final String ONE_REVIEW_ONLY = " (두 번 확인해 한 번만 걸려 통과로 뒀어요)";
+
+    /** AI 문구 분류가 쓸 수 있는 §6.2 규칙 코드. 이 밖의 코드는 버린다 (§6.3-8) */
+    static final Set<String> REVIEW_CODES = Set.of("CAP_FACT", "CAP_ORIGIN", "CAP_DISEASE", "CAP_MEDICINE",
+            "CAP_HFOOD", "CAP_SUPERLATIVE", "CAP_FAKE_REVIEW", "AI_VIRTUAL_EXPERT");
 
     /** 키워드 사전으로 검사하지 않는 규칙 (따로 판정) */
     private static final Set<String> NON_KEYWORD_RULES =
@@ -40,10 +49,28 @@ class CaptionService {
 
     List<CaptionHit> review(CaptionClaims claims, ExtractedAttrs realFirst,
                             ExtractedAttrs aiFirst, ExtractedAttrs aiSecond, List<Rule> rules) {
+        return review(claims, realFirst, aiFirst, aiSecond, rules, null, null, null);
+    }
+
+    /**
+     * review1·review2가 모두 있으면 AI 문구 분류(§6.2)로 판정 후보를 만들고,
+     * 하나라도 없으면(분류 실패) 규칙표 키워드 부분 일치로 대신하고 "간이 검수"를 붙인다 (§6.3-7).
+     */
+    List<CaptionHit> review(CaptionClaims claims, ExtractedAttrs realFirst, ExtractedAttrs aiFirst,
+                            ExtractedAttrs aiSecond, List<Rule> rules, String caption,
+                            CaptionReview review1, CaptionReview review2) {
         List<CaptionHit> hits = new ArrayList<>();
         List<String> expressions = claims == null || claims.expressions() == null
                 ? List.of() : claims.expressions();
-        String text = normalize(String.join(" ", expressions));
+        String text = normalize(String.join(" ", expressions) + " " + (caption == null ? "" : caption));
+        boolean classified = review1 != null && review2 != null;
+        String suffix = classified ? "" : SIMPLE_CHECK;
+
+        if (classified) {
+            boolean expertByAi = classifiedHits(caption, review1, review2, rules, hits);
+            addExpertAndLabel(hits, text, rules, aiFirst, aiSecond, expertByAi, "");
+            return hits;
+        }
 
         if (claims != null && realFirst != null) {
             // 1) CAP_FACT: 층 수
@@ -88,22 +115,105 @@ class CaptionService {
                         .toList();
                 if (!matched.isEmpty()) {
                     hits.add(CaptionHit.of(rule.getCode(), String.join(", ", matched), null,
-                            "'" + matched.get(0) + "' — " + rule.getTitle() + " 표현"));
+                            "'" + matched.get(0) + "' — " + rule.getTitle() + " 표현" + suffix));
                 }
             }
         }
 
+        addExpertAndLabel(hits, text, rules, aiFirst, aiSecond, false, suffix);
+        return hits;
+    }
+
+    /**
+     * AI 문구 분류 2회 결과를 검증해 hits에 넣는다.
+     * ① 인용이 실제 메뉴 설명에 있어야 하고 ② 코드가 규칙표에 있어야 한다 (§6.3-8)
+     * ③ 같은 표현·같은 코드가 2회 모두 나와야 🔴 후보다 (§6.3-6). CAP_FACT는 claimed ≠ observed일 때만.
+     * @return 문구에서 AI_VIRTUAL_EXPERT가 2회 모두 나왔는지
+     */
+    private boolean classifiedHits(String caption, CaptionReview r1, CaptionReview r2,
+                                   List<Rule> rules, List<CaptionHit> hits) {
+        Map<String, Rule> byCode = new LinkedHashMap<>();
+        if (rules != null) rules.stream().filter(r -> r != null && r.getCode() != null)
+                .forEach(r -> byCode.put(r.getCode(), r));
+        String source = normalize(caption);
+        List<CaptionReview.Item> first = valid(r1, source, byCode);
+        List<CaptionReview.Item> second = valid(r2, source, byCode);
+
+        boolean expert = false;
+        List<String> seen = new ArrayList<>();
+        for (CaptionReview.Item item : first) {
+            String code = item.category();
+            String key = code + "|" + normalize(item.expression());
+            if (seen.contains(key)) continue;
+            seen.add(key);
+            Rule rule = byCode.get(code);
+            String title = rule == null || rule.getTitle() == null ? code : rule.getTitle();
+
+            if ("CAP_ORIGIN".equals(code)) {   // 사진으로 확인 불가 → 🟢 + 직접 확인 안내
+                hits.add(new CaptionHit(code, item.expression(), null, ORIGIN_CHECK, true, true));
+                continue;
+            }
+            CaptionReview.Item other = second.stream().filter(o -> sameFinding(item, o)).findFirst().orElse(null);
+            if ("CAP_FACT".equals(code)) {
+                if (!factDiffers(item)) continue;
+                String evidence = "메뉴 설명 '" + item.expression() + "'이 실물 사진과 다름";
+                boolean agreed = other != null && factDiffers(other);
+                hits.add(agreed
+                        ? CaptionHit.of(code, item.claimed(), item.observed(), evidence)
+                        : new CaptionHit(code, item.claimed(), item.observed(), evidence + ONE_REVIEW_ONLY, true, false));
+                continue;
+            }
+            if ("AI_VIRTUAL_EXPERT".equals(code)) {
+                expert |= other != null;
+                continue;
+            }
+            String evidence = "'" + item.expression() + "' — " + title + " 표현";
+            hits.add(other == null
+                    ? new CaptionHit(code, item.expression(), null, evidence + ONE_REVIEW_ONLY, true, false)
+                    : CaptionHit.of(code, item.expression(), null, evidence));
+        }
+        return expert;
+    }
+
+    /** 인용이 문구에 있고, 코드가 §6.2 목록과 규칙표에 모두 있는 항목만 */
+    private static List<CaptionReview.Item> valid(CaptionReview review, String source, Map<String, Rule> byCode) {
+        if (review == null || review.findings() == null) return List.of();
+        return review.findings().stream()
+                .filter(i -> i != null && i.expression() != null && !normalize(i.expression()).isEmpty())
+                .filter(i -> i.category() != null && REVIEW_CODES.contains(i.category())
+                        && byCode.containsKey(i.category()))
+                .filter(i -> source.contains(normalize(i.expression())))
+                .toList();
+    }
+
+    /** 같은 코드이고 한쪽 인용이 다른 쪽을 포함하면 같은 표현으로 본다 ("디톡스" ≈ "디톡스 효과") */
+    private static boolean sameFinding(CaptionReview.Item a, CaptionReview.Item b) {
+        if (!a.category().equals(b.category())) return false;
+        String x = normalize(a.expression());
+        String y = normalize(b.expression());
+        return x.contains(y) || y.contains(x);
+    }
+
+    private static boolean factDiffers(CaptionReview.Item i) {
+        String c = normalize(i.claimed());
+        String o = normalize(i.observed());
+        return !c.isEmpty() && !o.isEmpty() && !c.equals(o);
+    }
+
+    private void addExpertAndLabel(List<CaptionHit> hits, String text, List<Rule> rules,
+                                   ExtractedAttrs aiFirst, ExtractedAttrs aiSecond,
+                                   boolean expertByAi, String suffix) {
         // 4) AI_VIRTUAL_EXPERT: 이미지 속 전문가(2회 모두, §6.3-2) 또는 문구의 전문가 추천
         Rule expert = rules == null ? null : rules.stream()
                                              .filter(r -> r != null && "AI_VIRTUAL_EXPERT".equals(r.getCode()))
                                              .findFirst().orElse(null);
         boolean inImage = hasExpert(aiFirst) && (aiSecond == null || hasExpert(aiSecond));
-        boolean inCaption = (expert != null && containsAny(text, expert.getKeywords()))
+        boolean inCaption = expertByAi || (expert != null && containsAny(text, expert.getKeywords()))
                 || EXPERT_TITLES.stream().anyMatch(t -> text.contains(t + "추천"));
         if (inImage || inCaption) {
             hits.add(CaptionHit.of("AI_VIRTUAL_EXPERT",
                     inImage ? "이미지 속 전문가로 보이는 인물" : "메뉴 설명의 전문가 추천 표현", null,
-                    "AI로 만든 전문가가 추천하는 것처럼 보일 수 있음"));
+                    "AI로 만든 전문가가 추천하는 것처럼 보일 수 있음" + (inImage || expertByAi ? "" : suffix)));
         }
 
         // 5) INFO_AI_LABEL: 판정 아님. "연출" 문구가 없으면 권장 안내
@@ -111,8 +221,6 @@ class CaptionService {
         if (!text.contains("연출")) {
             hits.add(new CaptionHit("INFO_AI_LABEL", null, null, AI_LABEL_TIP, true, true));
         }
-
-        return hits;
     }
 
     /** 실물 사진에서 같은 이름 재료의 개수 */

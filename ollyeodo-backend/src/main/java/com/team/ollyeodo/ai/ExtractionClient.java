@@ -10,4 +10,9 @@ import java.time.Duration;
 public interface ExtractionClient {
     ExtractedAttrs extractImage(String prompt, ImageInput image, Duration timeout);
     CaptionClaims extractCaption(String prompt, String caption, Duration timeout);
+
+    /** 메뉴 설명 문구 분류 (MVP §6.2). 지원하지 않는 구현은 실패로 보고 키워드 간이 검수로 대신한다. */
+    default CaptionReview reviewCaption(String prompt, String input, Duration timeout) {
+        throw new UnsupportedOperationException("문구 분류를 지원하지 않는 추출 클라이언트입니다.");
+    }
 }

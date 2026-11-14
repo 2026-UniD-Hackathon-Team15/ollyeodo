@@ -20,8 +20,9 @@ import java.util.concurrent.Executor;
 @ConditionalOnProperty(name = "spring.ai.model.chat", havingValue = "openai", matchIfMissing = true)
 public class ExtractionConfig {
     @Bean
-    public ExtractionClient extractionClient(ChatClient.Builder builder) {
-        return new OpenAiExtractionClient(builder.build());
+    public ExtractionClient extractionClient(ChatClient.Builder builder,
+            @Value("${app.extraction.image-reasoning-effort:}") String imageReasoningEffort) {
+        return new OpenAiExtractionClient(builder.build(), imageReasoningEffort);
     }
 
     /** OpenAI starter가 사용하는 HTTP 클라이언트에도 서비스와 같은 제한시간을 적용한다. */

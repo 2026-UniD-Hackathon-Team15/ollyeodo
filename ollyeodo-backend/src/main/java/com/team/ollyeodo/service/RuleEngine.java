@@ -1,5 +1,6 @@
 package com.team.ollyeodo.service;
 
+import com.team.ollyeodo.ai.ExtractedAttrs;
 import com.team.ollyeodo.domain.Rule;
 import com.team.ollyeodo.domain.Severity;
 import java.time.LocalDate;
@@ -26,6 +27,9 @@ public class RuleEngine {
 
     static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
     static final String ONE_RUN_ONLY = " (2회 추출 중 한 번만 기준을 넘어 🟢로 둠)";
+    static final String NOT_APPLICABLE = "해당 없음";
+    /** AI가 적용 여부를 판단하는 비교 항목 (§6.1.1). IMG_EXTRA_ITEM은 항상 비교한다 */
+    static final List<String> APPLICABILITY_RULES = List.of("IMG_COUNT", "IMG_FILL", "IMG_LAYER");
 
     private final CaptionService captionService = new CaptionService();
 
@@ -34,11 +38,20 @@ public class RuleEngine {
         List<Rule> safeRules = rules == null ? List.of() : rules;
         Map<String, Rule> byCode = byCode(safeRules);
 
+        Map<String, String> notApplicable = notApplicable(input.realFirst(), input.realSecond());
         List<JudgedFinding> findings = new ArrayList<>(
-                judgeImages(input.run1(), input.run2(), byCode, asOf));
+                judgeImages(input.run1(), input.run2(), byCode, asOf, notApplicable.keySet()));
+        notApplicable.forEach((code, reason) -> {   // 해당 없음: 비교하지 않음, 종합 판정에 영향 없음
+            Rule rule = byCode.get(code);
+            if (rule != null && isExpired(rule, asOf)) return;
+            findings.add(new JudgedFinding(code, Severity.GREEN, null, null,
+                    NOT_APPLICABLE + (reason == null || reason.isBlank() ? "" : " — " + reason.strip()),
+                    rule == null ? null : rule.getLawRef(), false));
+        });
 
         for (CaptionService.CaptionHit hit : captionService.review(
-                input.captionClaims(), input.realFirst(), input.aiFirst(), input.aiSecond(), safeRules)) {
+                input.captionClaims(), input.realFirst(), input.aiFirst(), input.aiSecond(), safeRules,
+                input.caption(), input.review1(), input.review2())) {
             JudgedFinding f = apply(hit, byCode.get(hit.ruleCode()), asOf);
             if (f != null) findings.add(f);
         }
@@ -50,8 +63,29 @@ public class RuleEngine {
 
     // ---------- 이미지 (run1 × run2) ----------
 
+    /**
+     * §6.3-5: 실물 2회 추출이 모두 applicable=true일 때만 비교한다. 한 번이라도 false면 "해당 없음".
+     * 적용 판단 값이 없으면(이전 응답 등) 그대로 비교한다.
+     * @return 해당 없음 규칙 코드 → AI가 적은 이유
+     */
+    static Map<String, String> notApplicable(ExtractedAttrs... reals) {
+        Map<String, String> result = new LinkedHashMap<>();
+        for (String code : APPLICABILITY_RULES) {
+            for (ExtractedAttrs real : reals) {
+                if (real == null || real.applicability() == null) continue;
+                ExtractedAttrs.Applicability a = real.applicability().stream()
+                        .filter(x -> x != null && code.equals(x.ruleCode())).findFirst().orElse(null);
+                if (a != null && Boolean.FALSE.equals(a.applicable())) {
+                    result.putIfAbsent(code, a.reason());
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
     private List<JudgedFinding> judgeImages(ComparisonResult run1, ComparisonResult run2,
-                                            Map<String, Rule> byCode, LocalDate asOf) {
+                                            Map<String, Rule> byCode, LocalDate asOf, Set<String> skip) {
         Map<String, FindingCandidate> r1 = byKey(run1);
         Map<String, FindingCandidate> r2 = byKey(run2);
         Set<String> keys = new LinkedHashSet<>(r1.keySet());
@@ -62,6 +96,7 @@ public class RuleEngine {
             FindingCandidate f1 = r1.get(key);
             FindingCandidate f2 = r2.get(key);
             FindingCandidate base = f1 != null ? f1 : f2;
+            if (skip.contains(base.ruleCode())) continue;
             Rule rule = byCode.get(base.ruleCode());
             if (rule != null && isExpired(rule, asOf)) continue;
 

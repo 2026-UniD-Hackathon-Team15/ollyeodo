@@ -70,7 +70,7 @@ public class CheckService {
         String aiPath = storage.store("ai", aiImage);
         // 문구 추출은 이미지 추출(실물 → AI 2단계)과 동시에 돌려 응답 시간을 줄인다.
         var captionFuture = CompletableFuture.supplyAsync(() -> extraction.extractCaption(caption));
-        var images = extraction.extractImages(aiInput, realInput);
+        var images = extraction.extractImages(aiInput, realInput, caption);
         CaptionClaims claims;
         try {
             claims = captionFuture.join();
@@ -78,11 +78,12 @@ public class CheckService {
             if (e.getCause() instanceof RuntimeException cause) throw cause; // ExtractionException → 422 유지
             throw e;
         }
-        var run1 = comparison.compare(images.ai().first(), images.real().first(), null);
-        var run2 = comparison.compare(images.ai().second(), images.real().second(), null);
+        // §6.3-2: 사진마다 3회 추출한 중앙값끼리 한 번 비교한다 (run1 = run2)
+        var median = comparison.compare(images.aiMedian(), images.realMedian(), null);
         LocalDate date = asOf == null ? LocalDate.now(ZoneId.of("Asia/Seoul")) : asOf;
-        var result = decision.evaluate(new CheckDecisionPipeline.Input(date, run1, run2, claims,
-                images.real().first(), images.ai().first(), images.ai().second(), caption));
+        var result = decision.evaluate(new CheckDecisionPipeline.Input(date, median, median, claims,
+                images.realMedian(), images.aiRuns().get(0), images.aiRuns().get(1), caption,
+                null, images.review1(), images.review2()));
         validateDecision(result);
 
         // 외부 AI/Storage 대기 중 DB 트랜잭션을 점유하지 않는다.
@@ -93,8 +94,8 @@ public class CheckService {
             entity.setMenuName(menuName);
             entity.setCaption(caption);
             entity.setAsOf(date);
-            entity.setAiAttrs(images.ai().first());
-            entity.setRealAttrs(images.real().first());
+            entity.setAiAttrs(images.aiMedian());
+            entity.setRealAttrs(images.realMedian());
             entity.setOverall(result.overall());
             entity.setCaptionFix(result.captionFix());
             entity.setRegenPrompt(result.regenPrompt());

@@ -49,5 +49,9 @@ supabase:
     signed-url-expires-in: 3600
 
 app:
+  extraction:
+    # 이미지 분석은 시간이 더 걸려도 꼼꼼하게 (개수·가려진 부분 추정). 호출 1번 제한시간
+    timeout: ${AI_TIMEOUT:120s}
+    image-reasoning-effort: ${AI_IMAGE_REASONING_EFFORT:high}
   storage:
     type: ${APP_STORAGE_TYPE:local}   # local(uploads/ 폴더) | supabase
