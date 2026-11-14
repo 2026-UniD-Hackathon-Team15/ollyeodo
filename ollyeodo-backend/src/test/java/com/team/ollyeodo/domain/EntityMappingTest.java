@@ -22,7 +22,7 @@ class EntityMappingTest {
     @Autowired EntityManager em;
 
     @Test
-    @DisplayName("Check의 aiAttrs·realAttrs·regenPrompt(jsonb), verdict, Finding(1:N)이 함께 저장된다")
+    @DisplayName("Check의 aiAttrs·realAttrs·regenPrompt(jsonb), overall, Finding(1:N)이 함께 저장된다")
     void checkWithFindingsRoundTrip() {
         Check check = new Check();
         check.setRealImagePath("demo/real/cake.jpg");
@@ -35,7 +35,7 @@ class EntityMappingTest {
         check.setRealAttrs(new ExtractedAttrs(
                 List.of(new ExtractedAttrs.Item("딸기", 4, "윗면")),
                 8, 0.7, "흰 원형 접시", List.of(), List.of(), List.of()));
-        check.setVerdict(Verdict.FAIL);
+        check.setOverall(Severity.RED);
         check.setRegenPrompt(new RegenPrompt("딸기 크레이프 케이크 1조각", "One slice of strawberry crepe cake"));
         check.addFinding(new Finding("IMG_COUNT", Severity.RED, "딸기 9개", "딸기 4개",
                 "실물의 2.25배", "식품표시광고법 제8조①4호"));
@@ -48,7 +48,7 @@ class EntityMappingTest {
         assertThat(found.getRealImagePath()).isEqualTo("demo/real/cake.jpg");
         assertThat(found.getAiAttrs().items().get(0).count()).isEqualTo(9);
         assertThat(found.getRealAttrs().layers()).isEqualTo(8);
-        assertThat(found.getVerdict()).isEqualTo(Verdict.FAIL);
+        assertThat(found.getOverall()).isEqualTo(Severity.RED);
         assertThat(found.getRegenPrompt().en()).startsWith("One slice");
         assertThat(found.getCreatedAt()).isNotNull();
         assertThat(found.getFindings()).hasSize(1);

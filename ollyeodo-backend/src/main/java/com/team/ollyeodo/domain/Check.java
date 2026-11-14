@@ -15,7 +15,7 @@ import org.hibernate.type.SqlTypes;
 
 /**
  * 검수 1건. 입력은 실물 사진 + AI 이미지 + 메뉴 설명(홍보 문구).
- * Check 1 : N Finding. 결과는 PASS / FAIL 두 가지.
+ * Check 1 : N Finding. 종합 결과(overall)는 GREEN / RED 두 가지 (#33).
  */
 @Entity
 @Table(name = "checks")
@@ -47,9 +47,9 @@ public class Check {
     @JdbcTypeCode(SqlTypes.JSON)
     private ExtractedAttrs realAttrs;
 
-    /** 최종 결과: PASS / FAIL */
+    /** 종합 신호등: GREEN / RED */
     @Enumerated(EnumType.STRING)
-    private Verdict verdict;
+    private Severity overall;
 
     @Column(columnDefinition = "text")
     private String captionFix;
