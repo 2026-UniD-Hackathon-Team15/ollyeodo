@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: ollyeodo
+  datasource:
+    url: jdbc:h2:mem:ollyeodo;MODE=PostgreSQL
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 25MB
