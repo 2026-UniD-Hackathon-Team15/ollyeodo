@@ -1,15 +1,32 @@
 spring:
   application:
     name: ollyeodo
+  config:
+    # 비밀값은 레포 루트의 .env(깃 제외)에서 읽는다. 파일이 없으면 무시한다.
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
   datasource:
-    url: jdbc:h2:mem:ollyeodo;MODE=PostgreSQL
-    username: sa
-    password:
+    # SUPABASE_DB_URL이 없으면 H2 메모리 DB로 뜬다 (Supabase 없이 로컬 개발용)
+    url: ${SUPABASE_DB_URL:jdbc:h2:mem:ollyeodo;MODE=PostgreSQL}
+    username: ${SUPABASE_DB_USERNAME:sa}
+    password: ${SUPABASE_DB_PASSWORD:}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: update   # 해커톤용. 테이블 생성 직후 SQL 에디터에서 RLS를 켠다
     open-in-view: false
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 25MB
+
+supabase:
+  url: ${SUPABASE_URL:}
+  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}   # 서버 환경변수에만. 프론트와 깃에 절대 넣지 않음
+  storage:
+    bucket: ${SUPABASE_STORAGE_BUCKET:images}
+    signed-url-expires-in: 3600
+
+app:
+  storage:
+    type: ${APP_STORAGE_TYPE:local}   # local(uploads/ 폴더) | supabase
