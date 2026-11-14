@@ -14,6 +14,7 @@ import java.io.UncheckedIOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Set;
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import org.springframework.beans.factory.ObjectProvider;
@@ -46,13 +47,18 @@ public class CheckService {
         this.transaction = new TransactionTemplate(manager);
     }
 
-    public CheckResponse create(MultipartFile realImage, MultipartFile aiImage, String caption, LocalDate asOf) {
-        // 두 파일 모두 검증한 다음 저장한다. 첫 파일만 저장되는 입력 오류를 막는다.
+    public CheckResponse create(String menuName, MultipartFile realImage, MultipartFile aiImage, String caption, LocalDate asOf) {
+        var missing = new ArrayList<String>();
+        if (menuName == null || menuName.isBlank()) missing.add("menuName");
+        if (realImage == null || realImage.isEmpty()) missing.add("realImage");
+        if (aiImage == null || aiImage.isEmpty()) missing.add("aiImage");
+        if (caption == null || caption.isBlank()) missing.add("caption");
+        if (!missing.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "필수값 누락: " + String.join(", ", missing));
+        }
         validateImage(realImage);
         validateImage(aiImage);
-        if (caption == null || caption.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "메뉴 설명을 입력해 주세요.");
-        }
         ExtractionService extraction = extractionProvider.getIfAvailable();
         CheckDecisionPipeline decision = decisionProvider.getIfAvailable();
         if (extraction == null || decision == null) {
@@ -84,6 +90,7 @@ public class CheckService {
             Check entity = new Check();
             entity.setRealImagePath(realPath);
             entity.setAiImagePath(aiPath);
+            entity.setMenuName(menuName);
             entity.setCaption(caption);
             entity.setAsOf(date);
             entity.setAiAttrs(images.ai().first());

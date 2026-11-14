@@ -19,11 +19,12 @@ public class CheckController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<CheckResponse> create(@RequestPart("realImage") MultipartFile realImage,
-            @RequestPart("aiImage") MultipartFile aiImage, @RequestParam("caption") String caption,
+    public ResponseEntity<CheckResponse> create(@RequestPart(value = "realImage", required = false) MultipartFile realImage,
+            @RequestPart(value = "aiImage", required = false) MultipartFile aiImage, @RequestParam(value = "caption", required = false) String caption,
+            @RequestParam(value = "menuName", required = false) String menuName,
             @RequestParam(value = "asOf", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf) {
-        CheckResponse response = service.create(realImage, aiImage, caption, asOf);
+        CheckResponse response = service.create(menuName, realImage, aiImage, caption, asOf);
         return ResponseEntity.created(URI.create("/api/checks/" + response.checkId())).body(response);
     }
 
