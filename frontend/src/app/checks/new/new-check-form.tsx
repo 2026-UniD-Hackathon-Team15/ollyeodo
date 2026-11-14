@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useCreateCheck, useCreateMenu } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
+import { AnalyzingView } from "./analyzing-view";
 import styles from "./new-check.module.css";
 
 const MAX_SIZE = 10 * 1024 * 1024;
@@ -191,6 +192,8 @@ export function NewCheckForm() {
     }
   }
 
+  if (loading) return <AnalyzingView image={aiPreview} />;
+
   return (
     <div className={styles.page}>
       <div className={styles.col}>
@@ -356,16 +359,6 @@ export function NewCheckForm() {
         </form>
       </div>
 
-      {loading && (
-        <div className={styles.loadingScreen} role="status" aria-live="polite">
-          <div className={styles.loadingDots} aria-hidden="true">
-            <i className={styles.dotStop} />
-            <i className={styles.dotGo} />
-          </div>
-          <p className={styles.loadingTitle}>실제 사진과 대조하는 중이에요</p>
-          <p className={styles.loadingSub}>사진과 설명을 꼼꼼히 비교하고 있어요. 잠시만 기다려 주세요.</p>
-        </div>
-      )}
     </div>
   );
 }
