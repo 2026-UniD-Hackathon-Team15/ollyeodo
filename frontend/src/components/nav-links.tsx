@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const nav = [
   { href: "/", label: "홈" },
   { href: "/checks/new", label: "검수하기" },
+  { href: "/stats", label: "검수 기록" },
 ];
 
 /** 검수 결과(/checks/12)는 「검수하기」 탭에 속한다 */

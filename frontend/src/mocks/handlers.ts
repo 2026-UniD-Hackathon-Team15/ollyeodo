@@ -1,5 +1,5 @@
-import type { CheckResult, CreateCheckInput, Rule } from "@/lib/types";
-import { mockCheckById, mockCheckResult, mockPassedCheckResult, mockRules } from "./data";
+import type { CheckResult, CheckStats, CreateCheckInput, Rule } from "@/lib/types";
+import { mockCheckById, mockCheckResult, mockPassedCheckResult, mockRules, mockStats } from "./data";
 
 /** 실제 네트워크처럼 보이도록 약간 지연 */
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -23,5 +23,9 @@ export const mockApi = {
   async listRules(): Promise<Rule[]> {
     await delay(200);
     return mockRules;
+  },
+  async getStats(): Promise<CheckStats> {
+    await delay(300);
+    return mockStats;
   },
 };

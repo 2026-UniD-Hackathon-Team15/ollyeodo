@@ -1,4 +1,4 @@
-import type { CheckResult, Rule } from "@/lib/types";
+import type { CheckResult, CheckStats, Rule } from "@/lib/types";
 
 /** 국가법령정보센터 조문 링크 */
 const LAW = {
@@ -152,8 +152,29 @@ export const mockRules: Rule[] = [
   { code: "INFO_AI_LABEL", title: "연출 이미지 문구 권장", lawRef: "", effectiveFrom: "", severity: "GREEN" },
 ];
 
-/** 목업 결과 찾기 — 13번은 🟢, 나머지는 🔴 */
+/** 피그마 「04 검수 기록」(68:153) 수치 — 전체 12 · 올려도 됨 7 · 고쳐야 함 5 */
+export const mockStats: CheckStats = {
+  totalChecks: 12,
+  greenChecks: 7,
+  redChecks: 5,
+  ruleCounts: [
+    { ruleCode: "IMG_COUNT", title: "개수", lawRef: FOOD_FAIR_FALSE, count: 7 },
+    { ruleCode: "IMG_EXTRA_ITEM", title: "없는 재료", lawRef: FOOD_FAIR_FALSE, count: 5 },
+    { ruleCode: "CAP_FACT", title: "수치·재료 불일치 (실물 사진 추출값 기준)", lawRef: FOOD_FAIR_FALSE, count: 4 },
+    { ruleCode: "CAP_MEDICINE", title: "의약품 오인", lawRef: "식품표시광고법 제8조①2호", count: 3 },
+    { ruleCode: "CAP_SUPERLATIVE", title: "근거 없는 최상급·비교", lawRef: "식품표시광고법 제8조①7호 · 표시광고법 제3조①3호", count: 2 },
+    { ruleCode: "AI_VIRTUAL_EXPERT", title: "AI 가상 전문가 — 11/27부터 금지", lawRef: "식품표시광고법 제8조①11호", count: 1 },
+  ],
+  recentChecks: [
+    { checkId: 14, menuName: "딸기 크레이프 케이크", overall: "GREEN", redCount: 0, asOf: "2026-11-14", createdAt: "2026-11-14T12:12:00Z" },
+    { checkId: 12, menuName: "딸기 크레이프 케이크", overall: "RED", redCount: 4, asOf: "2026-11-14", createdAt: "2026-11-14T11:40:00Z" },
+    { checkId: 13, menuName: "말차 티라미수", overall: "GREEN", redCount: 0, asOf: "2026-11-13", createdAt: "2026-11-13T03:00:00Z" },
+    { checkId: 11, menuName: "바질 크림 파스타", overall: "RED", redCount: 2, asOf: "2026-11-12", createdAt: "2026-11-12T03:00:00Z" },
+  ],
+};
+
+/** 목업 결과 찾기 — 🟢 목록(13·14)은 통과 결과, 나머지는 🔴 */
 export const mockCheckById = (id: number): CheckResult =>
-  id === mockPassedCheckResult.checkId
-    ? mockPassedCheckResult
+  id === 13 || id === 14
+    ? { ...mockPassedCheckResult, checkId: id }
     : { ...mockCheckResult, checkId: id };

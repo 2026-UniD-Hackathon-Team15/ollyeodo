@@ -6,6 +6,7 @@ import { api } from "./client";
 export const queryKeys = {
   check: (id: number) => ["checks", id] as const,
   rules: ["rules"] as const,
+  stats: ["checks", "stats"] as const,
 };
 
 export function useCheck(id: number) {
@@ -18,6 +19,10 @@ export function useCheck(id: number) {
 
 export function useRules() {
   return useQuery({ queryKey: queryKeys.rules, queryFn: api.listRules });
+}
+
+export function useCheckStats() {
+  return useQuery({ queryKey: queryKeys.stats, queryFn: api.getStats });
 }
 
 export function useCreateCheck() {
