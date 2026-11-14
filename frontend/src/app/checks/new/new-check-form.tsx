@@ -11,6 +11,7 @@ import { PhotoDrop } from "./photo-drop";
 import styles from "./new-check.module.css";
 
 const MAX_SIZE = 10 * 1024 * 1024;
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const CAPTION_MAX = 300;
 
 /** 등장 순서: 0.1초부터 0.06초 간격 */
@@ -27,8 +28,9 @@ function shake(el: HTMLElement | null) {
 }
 
 function isValidImage(file: File) {
-  if (file.type !== "image/jpeg" && file.type !== "image/png") {
-    toast.error("JPG, PNG 사진만 올릴 수 있어요");
+  // 백엔드가 받는 형식과 같게 (CheckService: JPEG·PNG·WEBP)
+  if (!IMAGE_TYPES.includes(file.type)) {
+    toast.error("JPG, PNG, WEBP 사진만 올릴 수 있어요");
     return false;
   }
   if (file.size > MAX_SIZE) {
