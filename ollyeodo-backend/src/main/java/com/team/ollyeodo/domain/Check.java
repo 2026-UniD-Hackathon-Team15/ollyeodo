@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,6 +28,10 @@ public class Check {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /** 검수한 사용자 (Supabase auth.users.id, 토큰의 sub). 로그인 도입(#71) 전 기록은 null → 아무에게도 안 보임 */
+    @Column(name = "user_id")
+    private UUID userId;
 
     /** 실물 사진 경로 (Storage) */
     private String realImagePath;

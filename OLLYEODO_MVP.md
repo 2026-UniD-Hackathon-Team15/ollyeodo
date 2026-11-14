@@ -19,6 +19,7 @@
 |---|---|---|---|
 | 2026-11-14 | **메뉴 정보 사전 등록을 없애고, 검수 입력을 "실제 음식 사진 + AI 홍보 이미지 + 메뉴 설명(홍보 문구)" 3가지로 바꾼다.** 비교 기준은 실물 사진에서 추출한 값이다 | 재료·개수·원산지를 미리 입력하는 단계가 번거롭고, 실물 사진만으로 비교 기준을 얻을 수 있음 | #4 #5 #6(닫음) #7 #9 #10 #11 #14(닫음) #15 #16 #17 #19 |
 | 2026-11-14 | 판정 결과를 **🟢 올려도 됨 · 🔴 고쳐 주세요 2단계**로 확정 (PR #34, #33). 🔴 항목은 사유와 근거 조항을 반드시 보여준다 | 사장님이 "올려도 되나 / 안 되나"를 바로 알 수 있게 | #5 #8 #9 #12 #16 |
+| 2026-11-15 | **로그인 추가** (§3.2, §8). Supabase Auth 이메일+비밀번호, 가입 이메일 인증 없음. `/api/checks/**`는 로그인 필요(401), 검수 기록은 본인 것만 | 사장님별로 검수 기록을 나눠 보기 위해 | #71 #72 |
 | 2026-11-15 | **3회 추출 + 중앙값** (§6.3 2·5·9). 실물·AI 사진을 각 3회 추출해 개수·층 수·비율은 중앙값, 재료 유무·적용 판단·같은 음식은 과반으로 합친 뒤 한 번 비교 | 같은 사진도 개수가 45·55·48처럼 흔들려, "2회 모두 넘을 때만 🔴"이면 한 번만 튀어도 결과가 바뀜 (떡 1.55배가 🟢) | #9 #11 #48 |
 | 2026-11-15 | **다른 음식이면 검수 불가** (§6.3 9). AI 이미지 추출 때 같은 메뉴인지(`same_food`)를 받고, 3회 중 2회 이상 다른 음식이거나 실물 재료가 전부 0개면 판정 없이 422 | 치킨 실물에 피자 AI 사진을 넣으면 "없는 재료 🔴"로 나와 고치라는 안내처럼 읽힘 | #9 #11 |
 | 2026-11-15 | **AI 적용 판단·문구 분류 도입** (§6.0, §6.1.1, §6.2, §6.3 5~8). 이미지 비교는 실물 사진을 보고 AI가 항목별 "해당 여부"를 정하고, 문구 검수는 키워드 부분 일치 대신 AI가 표현을 §6.2 규칙 코드로 분류한다. 임계값·심각도·근거 조항은 바꾸지 않는다 | 모든 음식에 같은 규칙을 적용해 층 없는 음식에 층 수 🔴, 키워드에 없는 표현 누락·다른 단어 속 키워드 오검출이 생김 | #7 #9 #11 #48 |
@@ -97,7 +98,7 @@
 - 배달앱·인스타 연동
 - 영상 검수
 - 화장품·숙박 등 업종 확장
-- 로그인 (데모는 **데모 가게 1개**로 진행, Store 엔티티 없음)
+- ~~로그인~~ → 2026-11-15 추가 (#71·#72). Supabase Auth 이메일+비밀번호, 가입 이메일 인증 없음. Store 엔티티는 여전히 없음
 - 메뉴 정보 사전 등록(재료·개수·원산지 입력) — 2026-11-14 변경으로 제외 (§0)
 
 ---
@@ -266,11 +267,11 @@ com.team.ollyeodo
 
 ## 8. 데이터 모델 (Supabase + JPA)
 
-DB와 이미지 저장소는 모두 Supabase를 쓴다. 연습용 프로젝트(뭄바이 리전) 대신 **대회용 새 프로젝트를 Seoul 리전에** 만들고 Spring이 JPA로 접속한다. 엔티티는 **3개**, Store·로그인·Menu는 뺀다.
+DB와 이미지 저장소는 모두 Supabase를 쓴다. 연습용 프로젝트(뭄바이 리전) 대신 **대회용 새 프로젝트를 Seoul 리전에** 만들고 Spring이 JPA로 접속한다. 엔티티는 **3개**, Store·Menu는 뺀다. 로그인은 Supabase Auth가 맡고(#71) 사용자 테이블을 따로 만들지 않는다.
 
 | 엔티티(테이블) | 주요 필드 | 관계·비고 |
 |---|---|---|
-| Check (`checks`) | id, realImagePath, aiImagePath, caption(메뉴 설명), asOf, aiAttrs (jsonb), realAttrs (jsonb), overall (GREEN/RED), captionFix, regenPrompt (jsonb: ko, en), createdAt | Check 1 : N Finding |
+| Check (`checks`) | id, userId (uuid, Supabase `auth.users.id`, #71), realImagePath, aiImagePath, caption(메뉴 설명), asOf, aiAttrs (jsonb), realAttrs (jsonb), overall (GREEN/RED), captionFix, regenPrompt (jsonb: ko, en), createdAt | Check 1 : N Finding. 사용자는 자기 검수만 조회·집계 |
 | Finding (`findings`) | id, check, ruleCode, severity, aiValue, realValue, evidence, lawRef | 항목별 판정 결과 |
 | Rule (`rules`) ⚖️ | code (PK), title, lawRef, sourceUrl, effectiveFrom, effectiveTo, severity, preEffectiveSeverity, keywords (jsonb) | `data.sql`로 13개 적재 |
 
@@ -281,6 +282,7 @@ DB와 이미지 저장소는 모두 Supabase를 쓴다. 연습용 프로젝트(�
 - Spring은 대시보드 Connect 메뉴의 **Session pooler** 연결 문자열로 JDBC 접속한다. (Direct는 IPv6라 집 와이파이·배포 서버에서 막힐 수 있음)
 - 테이블은 **RLS를 켜고 정책을 두지 않는다.** anon 키로는 외부에서 못 읽고, 테이블 소유자인 postgres 계정으로 붙는 Spring만 읽고 쓴다.
 - 이미지는 Storage의 **비공개 `images` 버킷**에 서버가 service_role 키로 올리고, 화면에는 **서명 URL**로 보여준다.
+- 로그인 토큰은 Supabase Auth가 발급한 JWT를 서버가 JWKS(`/auth/v1/.well-known/jwks.json`) 공개키로 검증한다. 비밀번호·세션은 서버에 두지 않는다 (#71).
 - jsonb 컬럼은 Hibernate 6의 `@JdbcTypeCode(SqlTypes.JSON)`으로 Java record에 매핑한다.
 
 ```yaml

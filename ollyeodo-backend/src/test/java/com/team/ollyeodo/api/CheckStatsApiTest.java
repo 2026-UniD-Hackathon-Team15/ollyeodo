@@ -26,6 +26,7 @@ class CheckStatsApiTest {
 
     private Check check(String menu, Severity overall, Finding... findings) {
         Check c = new Check();
+        c.setUserId(CheckApiTest.USER);
         c.setMenuName(menu);
         c.setCaption("설명");
         c.setAsOf(LocalDate.of(2026, 11, 15));
@@ -49,7 +50,7 @@ class CheckStatsApiTest {
 
     @Test
     void emptyStats() throws Exception {
-        mvc.perform(get("/api/checks/stats"))
+        mvc.perform(get("/api/checks/stats").with(CheckApiTest.asUser()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalChecks").value(0))
                 .andExpect(jsonPath("$.ruleCounts", hasSize(0)))
@@ -63,7 +64,7 @@ class CheckStatsApiTest {
         check("닭강정", Severity.RED, red("CAP_MEDICINE"), green("CAP_ORIGIN"));
         Check last = check("비빔밥", Severity.GREEN, green("INFO_AI_LABEL"));
 
-        mvc.perform(get("/api/checks/stats"))
+        mvc.perform(get("/api/checks/stats").with(CheckApiTest.asUser()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalChecks").value(3))
                 .andExpect(jsonPath("$.redChecks").value(2))
@@ -88,10 +89,10 @@ class CheckStatsApiTest {
     @Test
     void limitsRecentChecks() throws Exception {
         for (int i = 0; i < 4; i++) check("메뉴" + i, Severity.GREEN);
-        mvc.perform(get("/api/checks/stats").param("limit", "2"))
+        mvc.perform(get("/api/checks/stats").with(CheckApiTest.asUser()).param("limit", "2"))
                 .andExpect(jsonPath("$.totalChecks").value(4))
                 .andExpect(jsonPath("$.recentChecks", hasSize(2)));
-        mvc.perform(get("/api/checks/stats").param("limit", "0"))
+        mvc.perform(get("/api/checks/stats").with(CheckApiTest.asUser()).param("limit", "0"))
                 .andExpect(jsonPath("$.recentChecks", hasSize(1)));
     }
 }

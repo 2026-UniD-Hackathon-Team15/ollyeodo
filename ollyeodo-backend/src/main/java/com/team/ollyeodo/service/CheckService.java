@@ -14,6 +14,7 @@ import java.io.UncheckedIOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Set;
+import java.util.UUID;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -47,7 +48,10 @@ public class CheckService {
         this.transaction = new TransactionTemplate(manager);
     }
 
-    public CheckResponse create(String menuName, MultipartFile realImage, MultipartFile aiImage, String caption, LocalDate asOf) {
+    /** userId: 로그인한 사용자 (토큰의 sub, #71) */
+    public CheckResponse create(UUID userId, String menuName, MultipartFile realImage, MultipartFile aiImage,
+                                String caption, LocalDate asOf) {
+        java.util.Objects.requireNonNull(userId, "userId");
         var missing = new ArrayList<String>();
         if (menuName == null || menuName.isBlank()) missing.add("menuName");
         if (realImage == null || realImage.isEmpty()) missing.add("realImage");
@@ -89,6 +93,7 @@ public class CheckService {
         // 외부 AI/Storage 대기 중 DB 트랜잭션을 점유하지 않는다.
         Check check = transaction.execute(status -> {
             Check entity = new Check();
+            entity.setUserId(userId);
             entity.setRealImagePath(realPath);
             entity.setAiImagePath(aiPath);
             entity.setMenuName(menuName);
@@ -110,9 +115,10 @@ public class CheckService {
         return response(check);
     }
 
-    public CheckResponse get(long id) {
+    /** 내 검수만 조회한다. 다른 사람 기록이면 있는지도 알리지 않고 404 (#71) */
+    public CheckResponse get(UUID userId, long id) {
         return transaction.execute(status -> {
-            Check check = checks.findById(id).orElseThrow(() ->
+            Check check = checks.findByIdAndUserId(id, userId).orElseThrow(() ->
                     new ResponseStatusException(HttpStatus.NOT_FOUND, "검수 결과를 찾을 수 없습니다."));
             return response(check);
         });
