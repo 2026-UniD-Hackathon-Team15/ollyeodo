@@ -100,7 +100,7 @@ export const mockPassedCheckResult: CheckResult = {
     },
   ],
   captionFix: "딸기 3개를 올린 크레이프 케이크예요. (사진은 연출된 이미지입니다)",
-  regenPrompt: { ko: "", en: "" },
+  regenPrompt: null, // 백엔드도 🟢면 null
 };
 
 export const mockMenus: Menu[] = [

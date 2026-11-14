@@ -425,7 +425,7 @@ function Findings({
 /** 🔴 화면 — 고친 문구 + 다시 만들 때 쓸 프롬프트 (§10) */
 function Fix({ data }: { data: CheckResult }) {
   const [lang, setLang] = useState<"ko" | "en">("ko");
-  const prompt = data.regenPrompt[lang];
+  const prompt = data.regenPrompt?.[lang] ?? "";
 
   return (
     <section className="pt-10 pb-7">
@@ -440,7 +440,7 @@ function Fix({ data }: { data: CheckResult }) {
         <h3 className="mt-6 pb-2.5 text-[15px] leading-[23px] font-bold text-sub">고친 문구</h3>
         <CopyBox text={data.captionFix} what="고친 문구" />
 
-        {(data.regenPrompt.ko || data.regenPrompt.en) && (
+        {(data.regenPrompt?.ko || data.regenPrompt?.en) && (
           <>
             <div className="mt-6 flex items-center justify-between pb-2.5">
               <h3 className="text-[15px] leading-[23px] font-bold text-sub">
