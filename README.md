@@ -24,7 +24,7 @@
 | 백엔드 | Java 21, Spring Boot 3.x, Spring Data JPA, Spring AI |
 | DB·스토리지 | Supabase (PostgreSQL, Storage) — Seoul 리전 |
 | AI | 멀티모달 비전 모델 (미정: OpenAI / Gemini / Claude) |
-| 프론트엔드 | 미정 |
+| 프론트엔드 | Next.js 16 (App Router) · TypeScript · Tailwind CSS · shadcn/ui · TanStack Query |
 | 배포 | Docker → Render 또는 AWS EC2 |
 
 ## 레포 구조 (예정)
@@ -40,7 +40,22 @@
 
 ## 로컬 실행
 
-> 백엔드·프론트 초기 세팅 이슈(#1, #2)가 머지되면 여기에 실행 방법을 채웁니다.
+> 백엔드 초기 세팅 이슈(#1)가 머지되면 백엔드 실행 방법을 채웁니다.
+
+### 프론트엔드 (`frontend/`)
+
+Node.js 20.9 이상이 필요합니다.
+
+```bash
+cd frontend
+npm install
+cp .env.example .env.local   # 처음 한 번
+npm run dev                   # http://localhost:3000
+```
+
+- `NEXT_PUBLIC_USE_MOCK=true` 이면 백엔드 없이 목업 데이터(§9.1 응답 예시)로 화면이 동작합니다. 실제 API를 쓰려면 `false`로 바꾸고 `NEXT_PUBLIC_API_BASE_URL`을 백엔드 주소로 맞춥니다.
+- 화면: `/menus/new` 메뉴 등록 · `/checks/new` 검수하기 · `/checks/{id}` 검수 결과 (목업: `/checks/12`)
+- 검사: `npm run lint`, `npm run build`
 
 ### 환경변수
 
