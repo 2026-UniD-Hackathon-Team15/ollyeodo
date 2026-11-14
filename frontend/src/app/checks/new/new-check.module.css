@@ -1,18 +1,19 @@
 /* 검수하기 화면 (Figma: 01 검수하기) — 헤더·푸터는 공용 레이아웃을 쓴다 */
 
+/* 색은 globals.css 공통 토큰을 쓴다 (화면 전용 값만 여기 둔다) */
 .page {
-  --ink: #191f28;
-  --body: #4e5968;
-  --muted: #8b95a1;
-  --field: #f2f4f6;
+  --ink: var(--color-ink);
+  --body: var(--color-sub);
+  --muted: var(--color-faint);
+  --field: var(--color-surface);
   --field-hover: #eaedf0;
-  --line: #e5e8eb;
-  --green: #0b9572;
-  --green-dark: #087a5e;
-  --green-bright: #0fa37f;
-  --green-soft: #e6f6f0;
-  --red: #f04452;
-  --red-text: #d22030;
+  --line: var(--color-line);
+  --green: var(--color-signal-green-strong);
+  --green-dark: var(--color-signal-green-ink);
+  --green-bright: var(--color-signal-green);
+  --green-soft: var(--color-signal-green-soft);
+  --red: var(--color-signal-red);
+  --red-text: var(--color-signal-red-ink);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   color: var(--ink);
@@ -78,6 +79,14 @@
   line-height: 23px;
   font-weight: 700;
   color: var(--green-dark);
+  white-space: nowrap;
+}
+/* 라벨 줄 오른쪽 「최근 사진에서 고르기」 */
+.labelAction {
+  margin-left: auto;
+  padding: 0;
+  font-size: 13px;
+  line-height: 20px;
 }
 
 /* ---------- Menu name ---------- */
@@ -203,6 +212,7 @@
   height: 52px;
   border-radius: 99px;
   background: #fff;
+  color: var(--green-dark);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -402,6 +412,9 @@
 @media (max-width: 680px) {
   .col { width: auto; padding: 40px 20px 56px; }
   .label { flex-wrap: wrap; }
+  /* 좁은 화면에서 파일 이름·「바꾸기」가 잘리지 않게 썸네일을 줄인다 */
+  .photo { gap: 12px; padding-right: 14px; }
+  .thumb { width: 64px; height: 48px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

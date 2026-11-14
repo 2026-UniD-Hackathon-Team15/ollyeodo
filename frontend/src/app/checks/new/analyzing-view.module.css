@@ -1,14 +1,15 @@
 /* 화면 02 분석 중 — 피그마 「02 분석 중」 13:440. 헤더·푸터는 공용 레이아웃을 쓴다 */
 
+/* 색은 globals.css 공통 토큰을 쓴다 (화면 전용 값만 여기 둔다) */
 .page {
-  --ink: #191f28;
-  --body: #4e5968;
-  --muted: #8b95a1;
-  --field: #f2f4f6;
-  --line: #e5e8eb;
-  --green-bright: #0fa37f;
-  --green-soft: #e6f6f0;
-  --red: #f04452;
+  --ink: var(--color-ink);
+  --body: var(--color-sub);
+  --muted: var(--color-faint);
+  --field: var(--color-surface);
+  --line: var(--color-line);
+  --green-bright: var(--color-signal-green);
+  --green-soft: var(--color-signal-green-soft);
+  --red: var(--color-signal-red);
   --dim: #3a434f;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
