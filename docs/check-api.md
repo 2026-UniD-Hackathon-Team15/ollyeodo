@@ -8,6 +8,27 @@
 - 잘못된/누락 입력(`menuName`·`caption` 빈 값 포함): 400, AI 추출 실패: 422, 없는 ID: 404, AI/판정 의존성 미설정: 503.
 - `findings`는 GREEN 안내도 포함하며 `checkOnce`를 보존한다. GREEN의 `regenPrompt`는 null이다 (#11 확정 댓글).
 - 저장하는 것은 이미지 경로이며 POST/GET마다 Storage URL을 새로 발급한다.
+- 422 중 실제 사진과 AI 사진이 다른 음식이면 `detail`에 "실제 사진과 AI 사진이 다른 음식이라 검수할 수 없어요…"가 그대로 온다 (§6.3 9).
+
+## 검수 기록 통계 (#20)
+
+`GET /api/checks/stats?limit=10` — 저장된 판정을 세기만 하고 다시 판정하지 않는다. `limit`은 최근 검수 개수 (기본 10, 1~50).
+
+```json
+{
+  "totalChecks": 21, "redChecks": 15, "greenChecks": 6,
+  "ruleCounts": [
+    {"ruleCode": "CAP_MEDICINE", "title": "의약품 오인", "lawRef": "식품표시광고법 제8조①2호", "count": 9}
+  ],
+  "recentChecks": [
+    {"checkId": 21, "menuName": "닭강정", "overall": "RED", "redCount": 1,
+     "asOf": "2026-11-15", "createdAt": "2026-11-14T17:51:02Z"}
+  ]
+}
+```
+
+- `ruleCounts`: 🔴로 걸린 규칙별 **검수 건수**, 많은 순. 한 검수에서 같은 규칙이 여러 번 걸려도 1건. 🟢 안내(원산지 확인, 해당 없음 등)는 세지 않는다.
+- `recentChecks`: 최신순. `redCount`는 그 검수의 🔴 항목 수. 결과 화면은 `/checks/{checkId}`.
 
 ## 판정 연결 (#9 · #10)
 
