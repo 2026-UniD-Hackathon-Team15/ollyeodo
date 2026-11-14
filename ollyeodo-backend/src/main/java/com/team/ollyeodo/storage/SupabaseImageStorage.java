@@ -48,7 +48,7 @@ public class SupabaseImageStorage implements ImageStorage {
             throw new UncheckedIOException("이미지를 읽지 못했습니다.", e);
         }
         client.post()
-                .uri("/object/{bucket}/{path}", bucket, path)
+                .uri(objectUri("/object/", path))
                 .contentType(MediaType.parseMediaType(file.getContentType()))
                 .body(bytes)
                 .retrieve()
@@ -60,7 +60,7 @@ public class SupabaseImageStorage implements ImageStorage {
     public String signedUrl(String path) {
         ImageFiles.checkPath(path);
         SignResponse res = client.post()
-                .uri("/object/sign/{bucket}/{path}", bucket, path)
+                .uri(objectUri("/object/sign/", path))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("expiresIn", signedUrlExpiresIn))
                 .retrieve()
@@ -70,6 +70,15 @@ public class SupabaseImageStorage implements ImageStorage {
         }
         // signedURL은 "/object/sign/images/...?token=..." 형태의 상대 경로다.
         return storageBaseUrl + res.signedURL();
+    }
+
+    /**
+     * URI 템플릿 변수({path})로 넘기면 "/"가 %2F로 인코딩되고,
+     * Supabase가 그 경로로 서명한 URL은 조회 시 InvalidSignature가 난다.
+     * path는 ImageFiles가 [a-z0-9_-]/[a-f0-9-].ext 형태로만 만들므로 그대로 이어 붙여도 안전하다.
+     */
+    private String objectUri(String prefix, String path) {
+        return prefix + bucket + "/" + path;
     }
 
     private record SignResponse(String signedURL) {
