@@ -9,22 +9,19 @@
 - `findings`는 GREEN 안내도 포함하며 `checkOnce`를 보존한다. GREEN의 `regenPrompt`는 null이다 (#11 확정 댓글).
 - 저장하는 것은 이미지 경로이며 POST/GET마다 Storage URL을 새로 발급한다.
 
-## #9/#10 머지 전 개발 모드
+## 판정 연결 (#9 · #10)
 
-`app.checks.stub-enabled=true` (`APP_CHECKS_STUB_ENABLED=true`)일 때만 이슈에서 허용한
-임시 GREEN/빈 findings/null regenPrompt가 활성화된다. 실제 검수가 아니므로 운영에 사용하지 않는다.
-기본은 비활성화이며 판정 구현 없이 결과가 통과로 저장되는 것을 막는다.
-AI 추출은 별도 실제 구성 또는 테스트 대역이 필요하다.
+`CheckDecisionPipeline`은 #11 소유의 통합 경계이고, 실제 구현은 `RuleEngineCheckDecisionPipeline`이다.
+(#9·#10 머지 전 임시 GREEN 구현은 제거했다.)
 
-`CheckDecisionPipeline`은 #11 소유의 통합 경계다. #9/#10 클래스나 확정 시그니처는 수정/선점하지 않았다.
-머지 후 임시 구현을 제거하고 실제 구현에서 다음 순서로 연결한다.
-
-1. `Input`을 확정 계약의 `JudgeInput`으로 변환한다 (`caption` 외 나머지 필드 대응).
-2. `RuleEngine.judge(input, ruleRepository.findAll())`를 호출한다.
-3. `RegenPromptBuilder.build(judged, realFirst, caption)`를 호출한다.
+1. `Input`을 `JudgeInput`으로 변환한다.
+2. `RuleEngine.judge(input, ruleRepository.findAll())` — 규칙(근거 조항·시행일·키워드)은 rules 테이블(#5)
+3. `RegenPromptBuilder.build(judged, realFirst, caption)` — 🔴면 개선 프롬프트·문구 수정안, 🟢면 null·원문
 4. `JudgedFinding` 전체와 `RegenOutput`을 `Result`로 변환한다.
 
-`CheckService`는 실물/AI 이미지 저장 → `extractImages(ai, real)` → `extractCaption` →
+AI(OpenAI) 구성이 꺼져 있으면(`SPRING_AI_MODEL_CHAT=none`, 키 없음) 503으로 응답해 검증되지 않은 통과 결과를 만들지 않는다.
+
+`CheckService`는 실물/AI 이미지 저장 → `extractImages(ai, real)`와 `extractCaption`을 **동시에** 실행 →
 `compare` 2회(facts=null) → 위 통합 경계 → Check/Finding 원자 저장 순서다.
 실물 먼저 추출하는 A안은 기존 ExtractionService 안에 유지한다. AI 요청 중에는 DB 트랜잭션을 열지 않는다.
 

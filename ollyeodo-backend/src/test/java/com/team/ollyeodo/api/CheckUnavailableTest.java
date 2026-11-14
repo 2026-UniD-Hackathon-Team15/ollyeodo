@@ -10,7 +10,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = {"spring.ai.model.chat=none", "app.checks.stub-enabled=false"})
+/** AI(OpenAI) 구성이 꺼져 있으면(키 없음) 검증되지 않은 통과 결과를 만들지 않고 503을 준다. */
+@SpringBootTest(properties = "spring.ai.model.chat=none")
 @AutoConfigureMockMvc
 class CheckUnavailableTest {
     @Autowired MockMvc mvc;

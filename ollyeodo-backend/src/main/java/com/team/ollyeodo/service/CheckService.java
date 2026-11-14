@@ -1,5 +1,6 @@
 package com.team.ollyeodo.service;
 
+import com.team.ollyeodo.ai.CaptionClaims;
 import com.team.ollyeodo.ai.ExtractionService;
 import com.team.ollyeodo.ai.ImageInput;
 import com.team.ollyeodo.api.CheckResponse;
@@ -13,6 +14,8 @@ import java.io.UncheckedIOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -59,8 +62,16 @@ public class CheckService {
         ImageInput aiInput = imageInput(aiImage);
         String realPath = storage.store("real", realImage);
         String aiPath = storage.store("ai", aiImage);
+        // 문구 추출은 이미지 추출(실물 → AI 2단계)과 동시에 돌려 응답 시간을 줄인다.
+        var captionFuture = CompletableFuture.supplyAsync(() -> extraction.extractCaption(caption));
         var images = extraction.extractImages(aiInput, realInput);
-        var claims = extraction.extractCaption(caption);
+        CaptionClaims claims;
+        try {
+            claims = captionFuture.join();
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof RuntimeException cause) throw cause; // ExtractionException → 422 유지
+            throw e;
+        }
         var run1 = comparison.compare(images.ai().first(), images.real().first(), null);
         var run2 = comparison.compare(images.ai().second(), images.real().second(), null);
         LocalDate date = asOf == null ? LocalDate.now(ZoneId.of("Asia/Seoul")) : asOf;
