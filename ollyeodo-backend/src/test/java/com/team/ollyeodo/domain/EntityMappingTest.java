@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.team.ollyeodo.ai.ExtractedAttrs;
 import com.team.ollyeodo.repository.CheckRepository;
-import com.team.ollyeodo.repository.MenuRepository;
 import com.team.ollyeodo.repository.RuleRepository;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
@@ -18,59 +17,40 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 @DataJpaTest
 class EntityMappingTest {
 
-    @Autowired MenuRepository menuRepository;
     @Autowired CheckRepository checkRepository;
     @Autowired RuleRepository ruleRepository;
     @Autowired EntityManager em;
 
-    /** 테스트용 메뉴: 딸기 크레이프 케이크 (딸기 4개, 국내산, 8겹) */
-    private Menu saveStrawberryCake() {
-        MenuFacts facts = new MenuFacts(
-                List.of(new MenuFacts.Ingredient("딸기", 4, "국내산")),
-                8, "1조각");
-        return menuRepository.save(new Menu("딸기 크레이프 케이크", facts, "1/real/cake.jpg"));
-    }
-
     @Test
-    @DisplayName("Menu.facts(jsonb) 저장 후 다시 읽으면 값이 같다")
-    void menuFactsRoundTrip() {
-        Long id = saveStrawberryCake().getId();
-        em.flush();   // DB에 실제로 저장
-        em.clear();   // 메모리 캐시를 비워서, 다음 조회는 DB에서 다시 읽게 함
-
-        Menu found = menuRepository.findById(id).orElseThrow();
-        assertThat(found.getFacts().layers()).isEqualTo(8);
-        assertThat(found.getFacts().ingredients().get(0).count()).isEqualTo(4);
-        assertThat(found.getFacts().ingredients().get(0).origin()).isEqualTo("국내산");
-        assertThat(found.getCreatedAt()).isNotNull();
-    }
-
-    @Test
-    @DisplayName("Check의 aiAttrs·regenPrompt(jsonb)와 Finding(1:N)이 함께 저장된다")
+    @DisplayName("Check의 aiAttrs·realAttrs·regenPrompt(jsonb), verdict, Finding(1:N)이 함께 저장된다")
     void checkWithFindingsRoundTrip() {
-        Menu menu = saveStrawberryCake();
-
         Check check = new Check();
-        check.setMenu(menu);
+        check.setRealImagePath("demo/real/cake.jpg");
+        check.setAiImagePath("demo/ai/cake.jpg");
         check.setCaption("12겹 크레이프, 디톡스 딸기");
         check.setAsOf(LocalDate.of(2026, 11, 14));
         check.setAiAttrs(new ExtractedAttrs(
                 List.of(new ExtractedAttrs.Item("딸기", 9, "윗면")),
                 12, 0.9, "흰 원형 접시", List.of("민트 잎"), List.of(), List.of()));
-        check.setOverall(Severity.RED);
+        check.setRealAttrs(new ExtractedAttrs(
+                List.of(new ExtractedAttrs.Item("딸기", 4, "윗면")),
+                8, 0.7, "흰 원형 접시", List.of(), List.of(), List.of()));
+        check.setVerdict(Verdict.FAIL);
         check.setRegenPrompt(new RegenPrompt("딸기 크레이프 케이크 1조각", "One slice of strawberry crepe cake"));
         check.addFinding(new Finding("IMG_COUNT", Severity.RED, "딸기 9개", "딸기 4개",
                 "실물의 2.25배", "식품표시광고법 제8조①4호"));
 
         Long id = checkRepository.save(check).getId();
-        em.flush();
-        em.clear();
+        em.flush();   // DB에 실제로 저장
+        em.clear();   // 캐시를 비워서 DB에서 다시 읽게 함
 
         Check found = checkRepository.findById(id).orElseThrow();
+        assertThat(found.getRealImagePath()).isEqualTo("demo/real/cake.jpg");
         assertThat(found.getAiAttrs().items().get(0).count()).isEqualTo(9);
-        assertThat(found.getAiAttrs().fillRatio()).isEqualTo(0.9);
+        assertThat(found.getRealAttrs().layers()).isEqualTo(8);
+        assertThat(found.getVerdict()).isEqualTo(Verdict.FAIL);
         assertThat(found.getRegenPrompt().en()).startsWith("One slice");
-        assertThat(found.getOverall()).isEqualTo(Severity.RED);
+        assertThat(found.getCreatedAt()).isNotNull();
         assertThat(found.getFindings()).hasSize(1);
         assertThat(found.getFindings().get(0).getEvidence()).isEqualTo("실물의 2.25배");
     }

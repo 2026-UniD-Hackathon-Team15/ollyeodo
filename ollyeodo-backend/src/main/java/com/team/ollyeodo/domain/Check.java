@@ -13,7 +13,10 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-/** 검수 1건. Menu N : 1, Check 1 : N Finding */
+/**
+ * 검수 1건. 입력은 실물 사진 + AI 이미지 + 메뉴 설명(홍보 문구).
+ * Check 1 : N Finding. 결과는 PASS / FAIL 두 가지.
+ */
 @Entity
 @Table(name = "checks")
 @Getter
@@ -25,12 +28,13 @@ public class Check {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "menu_id", nullable = false)
-    private Menu menu;
+    /** 실물 사진 경로 (Storage) */
+    private String realImagePath;
 
+    /** AI 이미지 경로 (Storage) */
     private String aiImagePath;
 
+    /** 메뉴 설명(홍보 문구) */
     @Column(columnDefinition = "text")
     private String caption;
 
@@ -43,8 +47,9 @@ public class Check {
     @JdbcTypeCode(SqlTypes.JSON)
     private ExtractedAttrs realAttrs;
 
+    /** 최종 결과: PASS / FAIL */
     @Enumerated(EnumType.STRING)
-    private Severity overall;
+    private Verdict verdict;
 
     @Column(columnDefinition = "text")
     private String captionFix;
